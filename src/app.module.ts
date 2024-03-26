@@ -1,18 +1,21 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
-import { PrismaService } from './database/prisma.service';
-import { UserRepository } from './repositories/user-repository';
-import { PrismaUserRepository } from './repositories/prisma/prisma-user-repository';
+import { UserController } from './user/user.controller';
 import { AuthController } from './auth/auth.controller';
+import { JwtModule } from '@nestjs/jwt';
+import { UserModule } from './user/user.module';
+import { PrismaModule } from './database/prisma.module';
+import { AuthModule } from './auth/auth.module';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
-  imports: [],
-  controllers: [AppController, AuthController],
+  imports: [JwtModule, UserModule, PrismaModule, AuthModule],
+  controllers: [AppController, UserController, AuthController],
   providers: [
-    PrismaService,
     {
-      provide : UserRepository,
-      useClass : PrismaUserRepository
+      provide : APP_GUARD,
+      useClass : JwtAuthGuard
     }
   ],
 })

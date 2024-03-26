@@ -1,44 +1,20 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
+// import { IsPublic } from './auth/decorators/is-public.decorator';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { CurrentUser } from './auth/decorators/current-user.decorator';
+import { User } from '@prisma/client';
 
 @Controller()
 export class AppController {
-  @Get('')
-  async getFristPage(){
-    return "Nada ainda"
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  getHello(): string {
+    return "Hello World!";
+  }
+
+  @Get('me')
+  getMe(@CurrentUser() user : User) {
+    return user;
   }
 }
-
-// Exemplo de instância no banco de dados
-// @Controller()
-// export class AppController {
-//   constructor(private prisma: PrismaService) {}
-
-//   @Get()
-//   async getHello(){
-//     const member = await this.prisma.user.create({
-//       data : {
-//         id : '1',
-//         name  : 'Pedro',
-//         cpf : '08445032313',
-//         email : 'pedrulucas000@gmail.com',
-//         phoneNumber : '88997974194'
-//       }
-//     })
-//     return {
-//       member,
-//     }
-//   }
-// }
-
-
-
-
-    // const member = await this.prisma.user.create({
-    //   data : {
-    //     id : randomUUID(),
-    //     name : name,
-    //     cpf : cpf,
-    //     email : email,
-    //     phoneNumber : phoneNumber,
-    //   }
-    // })
