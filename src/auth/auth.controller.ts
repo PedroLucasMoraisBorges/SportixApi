@@ -1,24 +1,18 @@
-import { Body, Controller, Post } from "@nestjs/common";
-import { CreateUserBody } from "src/user/dtos/create-user-body";
-import { LoginUserBody } from "src/user/dtos/login-user-body";
-import { UserRepository } from "src/repositories/user-repository";
+import { Controller, HttpCode, HttpStatus, Post, UseGuards, Request} from '@nestjs/common';
+import { LocalAuthGuard } from './guards/local-auth.guard';
+import { AuthService } from './auth.service';
+import { AuthRequest } from './models/authRequest';
+import { IsPublic } from './decorators/is-public.decorator';
 
-@Controller('acess')
-export class AuthController{
-    constructor(
-        private userRepository : UserRepository
-    ) {}
+@Controller()
+export class AuthController {
+    constructor(private readonly authService : AuthService) { }
 
+    @IsPublic()
     @Post('login')
-    async getUser(@Body() body : LoginUserBody){
-        const {email} = body
-        return await this.userRepository.login(email)
-    }
-
-    @Post('register')
-    async createUser(@Body() body : CreateUserBody){
-        const {name, cpf, email, phoneNumber} = body;
-
-        await this.userRepository.create(name, cpf, email, phoneNumber)
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(LocalAuthGuard)
+    login(@Request() request : AuthRequest) {
+        return this.authService.login(request.user)
     }
 }
