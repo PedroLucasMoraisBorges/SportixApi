@@ -1,4 +1,4 @@
-import {IsNotEmpty, Length, IsEmail, Matches} from 'class-validator'
+import {IsNotEmpty, Length, IsEmail, Matches, IsString} from 'class-validator'
 
 export class CreateUserBody {
     @Length(15, 254)
@@ -24,4 +24,20 @@ export class CreateUserBody {
     @Length(11, 11)
     @IsNotEmpty()
     phoneNumber : string;
+
+    @IsNotEmpty()
+    @IsString()
+    @Length(8, 20)
+    @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
+        message: 'password too weak',
+    })
+    password1: string;
+
+    @IsNotEmpty()
+    @IsString()
+    @Length(8, 20)
+    @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
+        message: 'password too weak',
+    })
+    password2: string;
 }

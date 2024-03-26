@@ -1,6 +1,6 @@
 import { Body, Controller, Post } from "@nestjs/common";
-import { CreateUserBody } from "src/dtos/create-user-body";
-import { LoginUserBody } from "src/dtos/login-user-body";
+import { CreateUserBody } from "src/user/dtos/create-user-body";
+import { LoginUserBody } from "src/user/dtos/login-user-body";
 import { UserRepository } from "src/repositories/user-repository";
 
 @Controller('acess')
