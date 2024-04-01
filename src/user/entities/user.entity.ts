@@ -15,4 +15,5 @@ export class UserLogin {
     name: string;
     cpf: string;
     phoneNumber : string;
+    court : []
 }
