@@ -1,6 +1,7 @@
 import {IsNotEmpty, Length, Matches} from 'class-validator'
+import { Court } from '../entities/court.entity';
 
-export class CreateCourtBody {
+export class CreateCourtBody implements Court{
     @Length(15, 254)
     @IsNotEmpty({
         message : "O campo de nome não pode estar vazio"
@@ -13,21 +14,21 @@ export class CreateCourtBody {
         message : "O campo RUA não pode estar vazio"
     })
     @Matches(/^[\p{L}\s]+$/u, { message: "O nome deve conter apenas letras e espaços" })
-    rua : string;
+    road : string;
 
     @Length(15, 254)
     @IsNotEmpty({
         message : "O campo BAIRRO não pode estar vazio"
     })
     @Matches(/^[\p{L}\s]+$/u, { message: "O nome deve conter apenas letras e espaços" })
-    bairro : string;
+    neighborhood : string;
 
     @Length(15, 254)
     @IsNotEmpty({
         message : "O campo CIDADE não pode estar vazio"
     })
     @Matches(/^[\p{L}\s]+$/u, { message: "O nome deve conter apenas letras e espaços" })
-    cidade : string;
+    city : string;
 
     @Length(15, 254)
     @IsNotEmpty({

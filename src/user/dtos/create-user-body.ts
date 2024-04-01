@@ -1,6 +1,7 @@
 import {IsNotEmpty, Length, IsEmail, Matches, IsString} from 'class-validator'
+import { User } from '../entities/user.entity';
 
-export class CreateUserBody {
+export class CreateUserBody implements User{
     @Length(15, 254)
     @IsNotEmpty({
         message : "O campo de nome não pode estar vazio"

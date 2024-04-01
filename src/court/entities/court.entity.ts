@@ -1,9 +1,9 @@
 export class Court {
     id?: string;
     name: string;
-    rua: string;
-    bairro: string;
-    cidade: string;
+    road: string;
+    neighborhood: string;
+    city: string;
     number: string;
     reference: string;
 }
