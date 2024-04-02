@@ -14,10 +14,34 @@ datasource db {
 }
 
 model User {
-  id          String @id
+  id          String  @id
   name        String
-  cpf         String @unique
-  phoneNumber String @unique
-  email       String @unique
+  cpf         String  @unique
+  phoneNumber String  @unique
+  email       String  @unique
   password    String
+  Times       Times[]
+  Court       Court[]
+}
+
+model Court {
+  id           String  @id
+  name         String
+  road         String
+  city         String
+  number       String
+  reference    String
+  neighborhood String
+  fk_user      String
+  user         User    @relation(fields: [fk_user], references: [id])
+  Times        Times[]
+}
+
+model Times {
+  id       String  @id
+  hour     Decimal
+  fk_court String
+  fk_user  String?
+  court    Court   @relation(fields: [fk_court], references: [id])
+  user     User?   @relation(fields: [fk_user], references: [id])
 }
