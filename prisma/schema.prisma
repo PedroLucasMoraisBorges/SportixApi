@@ -39,7 +39,7 @@ model Court {
 
 model Times {
   id       String  @id
-  hour     Decimal
+  hour     String
   fk_court String
   fk_user  String?
   court    Court   @relation(fields: [fk_court], references: [id])
