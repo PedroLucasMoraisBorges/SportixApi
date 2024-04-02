@@ -20,12 +20,12 @@ model User {
   phoneNumber String  @unique
   email       String  @unique
   password    String
-  Times       Times[]
+  Times       Time[]
   Court       Court[]
 }
 
 model Court {
-  id           String  @id
+  id           String         @id
   name         String
   road         String
   city         String
@@ -33,15 +33,23 @@ model Court {
   reference    String
   neighborhood String
   fk_user      String
-  user         User    @relation(fields: [fk_user], references: [id])
-  Times        Times[]
+  user         User           @relation(fields: [fk_user], references: [id])
+  OperatingDay OperatingDay[]
 }
 
-model Times {
-  id       String  @id
-  hour     String
+model OperatingDay {
+  id       String @id
+  day      String
   fk_court String
-  fk_user  String?
-  court    Court   @relation(fields: [fk_court], references: [id])
-  user     User?   @relation(fields: [fk_user], references: [id])
+  court    Court  @relation(fields: [fk_court], references: [id])
+  Times    Time[]
+}
+
+model Time {
+  id               String       @id
+  hour             String
+  fk_operating_day String
+  fk_user          String?
+  operatingDay     OperatingDay @relation(fields: [fk_operating_day], references: [id])
+  user             User?        @relation(fields: [fk_user], references: [id])
 }
