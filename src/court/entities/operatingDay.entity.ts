@@ -3,3 +3,10 @@ export class OperatingDay {
     day: string
     fk_court: string
 }
+
+
+export class OperatingDayCreate {
+    days: string[]
+    hours: string[]
+    fk_court: string
+}

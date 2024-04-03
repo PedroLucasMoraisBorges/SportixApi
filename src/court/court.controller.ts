@@ -2,7 +2,7 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Post, Request } from '@nes
 import { CourtService } from './court.service';
 import { CreateCourtBody } from 'src/court/dtos/create-court-body';
 import { AuthRequest } from 'src/auth/models/AuthRequest';
-import { CreateTimeBody } from './dtos/create-time-body';
+import { CreateOperatingDayBody } from './dtos/create-operatingDay-body';
 
 @Controller('court')
 export class CourtController {
@@ -22,11 +22,19 @@ export class CourtController {
     }
   }
 
-  @Post('createTimes')
+  @Post('createOperatingDays')
   @HttpCode(HttpStatus.OK)
-  createTime(@Body() createTimeBody : CreateTimeBody, @Request() request : AuthRequest) {
+  createOperatingDays(@Body() createOperatingDayBody : CreateOperatingDayBody,@Request() request : AuthRequest) {
     if (request.user.court.length != 0){
-      return this.courtService.createTimes(createTimeBody)
+      return this.courtService.createOperatingDays(createOperatingDayBody)
     }
   }
+
+  // @Post('createTimes')
+  // @HttpCode(HttpStatus.OK)
+  // createTime(@Body() createTimeBody : CreateTimeBody, @Request() request : AuthRequest) {
+  //   if (request.user.court.length != 0){
+  //     return this.courtService.createTimes(createTimeBody)
+  //   }
+  // }
 }

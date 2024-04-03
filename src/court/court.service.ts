@@ -3,7 +3,7 @@ import { PrismaService } from 'src/database/prisma.service';
 import { randomUUID } from 'crypto';
 import { CreateCourtBody } from './dtos/create-court-body';
 import { UserLogin } from 'src/user/entities/user.entity';
-import { CreateTimeBody } from './dtos/create-time-body';
+import { CreateOperatingDayBody } from './dtos/create-operatingDay-body';
 
 @Injectable()
 export class CourtService {
@@ -33,39 +33,59 @@ export class CourtService {
     const courts = await this.prisma.court.findMany({
       where: {
         fk_user: user.id
-      },
-      include: {
-        Times: true
       }
     })
 
     return courts
   }
 
-  async createTimes(object : CreateTimeBody) {
-    const inputedHour = object.hour
-    const courtId = object.fk_court
+  async createOperatingDays(object : CreateOperatingDayBody) {
+    const { days, hours, fk_court } = object;
+    const returnDays = []
 
-    const existingTime = await this.prisma.times.findMany({
-      where: {
-        fk_court : courtId,
-        hour : inputedHour
+    for(const dayInputed of days) {
+      const existingDay = await this.prisma.operatingDay.findMany({
+        where : {
+          day: dayInputed,
+          fk_court: fk_court
+        }
+      })
+
+      if (existingDay.length == 0){
+        const day = await this.prisma.operatingDay.create({
+          data: {
+            id : randomUUID(),
+            day: dayInputed,
+            court: {connect: {id: fk_court}}
+          }
+        })
+
+        const returnHours = []
+
+        for (const hourInputed of hours) {
+          const existingHour = await this.prisma.time.findMany({
+            where: {
+              hour : hourInputed,
+              fk_operating_day : day.id
+            }
+          }) 
+
+          if (existingHour.length == 0) {
+            const hour = await this.prisma.time.create({
+              data: {
+                id: randomUUID(),
+                hour: hourInputed,
+                operatingDay: {connect: {id: day.id}}
+              }
+            })
+
+            returnHours.push(hour)
+          }
+        }
+        returnDays.push({day, returnHours})
       }
-    })
-
-    if (existingTime.length > 0) {
-      throw new Error("Já existe esse horário para essa quadra")
     }
 
-    const time = await this.prisma.times.create({
-      data: {
-        id : randomUUID(),
-        hour : inputedHour,
-        court : {connect: {id: courtId}}
-      }
-    })
-
-    return time
-
+    return returnDays
   }
 }
