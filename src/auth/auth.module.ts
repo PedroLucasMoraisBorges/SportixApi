@@ -8,6 +8,7 @@ import { UserModule } from 'src/user/user.module';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LoginValidationMiddleware } from './middlewares/login-validation.middleware';
+import { PrismaModule } from 'src/database/prisma.module';
 
 @Module({
     imports: [
@@ -17,6 +18,7 @@ import { LoginValidationMiddleware } from './middlewares/login-validation.middle
             secret: process.env.JWT_SECRET,
             signOptions: { expiresIn: '14d' },
         }),
+        PrismaModule
     ],
     controllers: [AuthController],
     providers: [LocalStrategy, AuthService, JwtStrategy],
