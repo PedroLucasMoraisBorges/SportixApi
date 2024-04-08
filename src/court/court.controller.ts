@@ -3,6 +3,7 @@ import { CourtService } from './court.service';
 import { CreateCourtBody } from 'src/court/dtos/create-court-body';
 import { AuthRequest } from 'src/auth/models/AuthRequest';
 import { CreateOperatingDayBody } from './dtos/create-operatingDay-body';
+import { IsPublic } from 'src/auth/decorators/is-public.decorator';
 
 @Controller('court')
 export class CourtController {
@@ -20,6 +21,13 @@ export class CourtController {
     if (request.user.court.length != 0){
       return this.courtService.getUserCourts(request.user)
     }
+  }
+
+  @IsPublic()
+  @Get('getCourtInfo/:id/:date')
+  @HttpCode(HttpStatus.OK)
+  getCourtInfo(@Request() request : AuthRequest) {
+    return this.courtService.getCourtInfo(request.params.id, request.params.date)
   }
 
   @Post('createOperatingDays')

@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import { CreateCourtBody } from './dtos/create-court-body';
 import { UserLogin } from 'src/user/entities/user.entity';
 import { CreateOperatingDayBody } from './dtos/create-operatingDay-body';
+import { TimeForUSer } from './entities/time.entity';
 
 @Injectable()
 export class CourtService {
@@ -29,6 +30,7 @@ export class CourtService {
     }
 
   }
+
   async getUserCourts(user : UserLogin) {
     const courts = await this.prisma.court.findMany({
       where: {
@@ -37,6 +39,58 @@ export class CourtService {
     })
 
     return courts
+  }
+
+  private async getWekendDay(date) : Promise<string>{
+    const partesData: string[] = date.split("-");
+    const data: Date = new Date(parseInt(partesData[2]), parseInt(partesData[1]) - 1, parseInt(partesData[0]));
+
+    const dayNames: string[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    const diaSemana: number = data.getDay();
+
+    return dayNames[diaSemana];
+  }
+
+  async getCourtInfo(id, date) {
+    const nomeDiaSemana = await this.getWekendDay(date)
+
+    const operatingDay = await this.prisma.operatingDay.findMany({
+      where : {
+        fk_court : id,
+        day : nomeDiaSemana
+      },
+      include : {Times : true}
+    })
+
+    const returningTimes = []
+    
+    for(const time of operatingDay[0].Times){
+      const reservation = await this.prisma.reservation.findMany({
+        where : {
+          hour : time.hour,
+          fk_court : id,
+          date : date
+        }
+      })
+      
+      const timeForUser : TimeForUSer = {
+        id : time.id,
+        hour : time.hour,
+        status : "undefined"
+      }
+
+      if(reservation.length != 0) {
+        timeForUser.status = "Reservado"
+      }
+      else{
+        timeForUser.status = "Livre"
+      }
+
+      returningTimes.push(timeForUser)
+    }
+
+    return returningTimes
   }
 
   async createOperatingDays(object : CreateOperatingDayBody) {
@@ -88,4 +142,6 @@ export class CourtService {
 
     return returnDays
   }
+
+
 }
