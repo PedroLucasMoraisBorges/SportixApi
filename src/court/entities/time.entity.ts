@@ -3,3 +3,9 @@ export class Time{
     hour: string
     fk_court: string
 }
+
+export class TimeForUSer{
+    id : string
+    hour : string
+    status : string
+}
