@@ -14,15 +14,16 @@ datasource db {
 }
 
 model User {
-  id          String        @id
-  name        String
-  cpf         String        @unique
-  phoneNumber String        @unique
-  email       String        @unique
-  password    String
-  Times       Time[]
-  Court       Court[]
-  Reservation Reservation[]
+  id           String         @id
+  name         String
+  cpf          String         @unique
+  phoneNumber  String         @unique
+  email        String         @unique
+  password     String
+  Times        Time[]
+  Court        Court[]
+  Reservation  Reservation[]
+  Cancellation Cancellation[]
 }
 
 model Court {
@@ -37,6 +38,8 @@ model Court {
   user         User           @relation(fields: [fk_user], references: [id], onDelete: Cascade)
   OperatingDay OperatingDay[]
   Reservation  Reservation[]
+  FreeGame     FreeGame[]
+  Cancellation Cancellation[]
 }
 
 model OperatingDay {
@@ -64,4 +67,12 @@ model Reservation {
   hour     String
   court    Court  @relation(fields: [fk_court], references: [id])
   client   User   @relation(fields: [fk_user], references: [id])
+}
+
+model FreeGame {
+  id       String @id
+  fk_court String
+  date     String
+  hour     String
+  court    Court  @relation(fields: [fk_court], references: [id])
 }

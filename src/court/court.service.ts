@@ -64,9 +64,17 @@ export class CourtService {
     })
 
     const returningTimes = []
-    
+
     for(const time of operatingDay[0].Times){
       const reservation = await this.prisma.reservation.findMany({
+        where : {
+          hour : time.hour,
+          fk_court : id,
+          date : date
+        }
+      })
+
+      const freeGame = await this.prisma.freeGame.findMany({
         where : {
           hour : time.hour,
           fk_court : id,
@@ -77,14 +85,14 @@ export class CourtService {
       const timeForUser : TimeForUSer = {
         id : time.id,
         hour : time.hour,
-        status : "undefined"
+        status : "livre"
       }
 
       if(reservation.length != 0) {
         timeForUser.status = "Reservado"
       }
-      else{
-        timeForUser.status = "Livre"
+      else if(freeGame.length != 0){
+        timeForUser.status = "Jogo Livre"
       }
 
       returningTimes.push(timeForUser)
