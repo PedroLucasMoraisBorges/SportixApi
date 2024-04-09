@@ -81,6 +81,14 @@ export class CourtService {
           date : date
         }
       })
+
+      const closure = await this.prisma.closure.findMany({
+        where : {
+          hour : time.hour,
+          fk_court : id,
+          date : date
+        }
+      })
       
       const timeForUser : TimeForUSer = {
         id : time.id,
@@ -93,6 +101,9 @@ export class CourtService {
       }
       else if(freeGame.length != 0){
         timeForUser.status = "Jogo Livre"
+      }
+      else if(closure) {
+        timeForUser.status = "Fechado"
       }
 
       returningTimes.push(timeForUser)
