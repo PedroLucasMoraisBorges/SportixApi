@@ -53,6 +53,7 @@ export class CourtService {
   }
 
   async getCourtInfo(id, date) {
+    // Pega qual dia da semana é essa data
     const nomeDiaSemana = await this.getWekendDay(date)
 
     const operatingDay = await this.prisma.operatingDay.findMany({
