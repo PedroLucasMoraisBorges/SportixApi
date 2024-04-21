@@ -7,18 +7,18 @@ import { CreateUserBody } from './dtos/create-user-body';
 @Injectable()
 export class UserService {
   constructor(private readonly prisma: PrismaService) { }
-  async create(object: CreateUserBody) {
-    
+  async create(object: CreateUserBody) {    
     const email = object.email
-    const existingUser = await this.prisma.user.findUnique({ where: { email } });
-
-    if (existingUser) {
-      throw new Error('Usuário com este email já cadastrado')
-    }
 
     if (object.password1 != object.password2) {
       throw new Error('As senhas não coincidem')
     }
+
+    const existingUser = await this.prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      throw new Error('Usuário com este email já cadastrado')
+    }
+
 
     const passwordHash = await bcrypt.hash(object.password1, 10)
 
@@ -33,16 +33,14 @@ export class UserService {
       }
     })
 
-    return {
-      user,
-      password: undefined
-    }
+
+    return user
 
   }
 
   async findByEmail(email: string) {
-    return this.prisma.user.findUnique({
-      where: { email }
-    })
+    return await this.prisma.user.findUnique({
+        where: { email }
+    });
   }
 }
