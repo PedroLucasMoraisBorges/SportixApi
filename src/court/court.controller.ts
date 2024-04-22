@@ -52,4 +52,10 @@ export class CourtController {
     return this.courtService.getCourts(request.params.id)
   }
 
+  @Get('getReservedTimes')
+  @HttpCode(HttpStatus.OK)
+  getReservedTimes(@Request() request : AuthRequest) {
+    return this.courtService.getReservedTimes(request.user)
+  }
+
 }
