@@ -44,4 +44,12 @@ export class CourtController {
   reserveTime(@Body() reserveTimeBody : ReserveTimeBody, @Request() request : AuthRequest){
     return this.courtService.reserveTime(reserveTimeBody, request.user)
   }
+
+  @IsPublic()
+  @Get('getCourts/:id')
+  @HttpCode(HttpStatus.OK)
+  getCourts(@Request() request : AuthRequest) {
+    return this.courtService.getCourts(request.params.id)
+  }
+
 }

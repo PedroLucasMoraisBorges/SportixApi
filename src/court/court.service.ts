@@ -182,4 +182,14 @@ export class CourtService {
 
     return reservation
   }
+
+  async getCourts(ownerId) {
+    const courts = await this.prisma.court.findMany({
+      where : {
+        fk_user : ownerId
+      }
+    })
+
+    return courts
+  }
 }
