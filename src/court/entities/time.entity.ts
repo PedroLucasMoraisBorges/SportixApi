@@ -9,3 +9,9 @@ export class TimeForUSer{
     hour : string
     status : string
 }
+
+export class ReserveTime{
+    fk_court : string
+    date : string
+    hour : string
+}
