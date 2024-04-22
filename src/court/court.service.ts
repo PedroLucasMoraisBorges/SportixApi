@@ -107,7 +107,7 @@ export class CourtService {
       else if (closure.length != 0) {
         timeForUser.status = "Fechado"
       }
-      else{
+      else {
         timeForUser.status = "Livre"
       }
 
@@ -185,11 +185,38 @@ export class CourtService {
 
   async getCourts(ownerId) {
     const courts = await this.prisma.court.findMany({
-      where : {
-        fk_user : ownerId
+      where: {
+        fk_user: ownerId
       }
     })
 
     return courts
   }
+
+  async getReservedTimes(user) {
+    const courts = await this.prisma.court.findMany({
+      where: {
+        fk_user: user.id
+      },
+      include: {
+        Reservation: true
+      }
+    });
+
+    const listReservations = [];
+
+    const promises = courts.map(async court => {
+      const reservations = await this.prisma.reservation.findMany({
+        where: {
+          fk_court: court.id
+        }
+      });
+      listReservations.push(...reservations);
+    });
+
+    await Promise.all(promises);
+
+    return listReservations;
+  }
+
 }
