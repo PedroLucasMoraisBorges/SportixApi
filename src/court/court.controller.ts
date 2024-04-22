@@ -4,6 +4,7 @@ import { CreateCourtBody } from 'src/court/dtos/create-court-body';
 import { AuthRequest } from 'src/auth/models/AuthRequest';
 import { CreateOperatingDayBody } from './dtos/create-operatingDay-body';
 import { IsPublic } from 'src/auth/decorators/is-public.decorator';
+import { ReserveTimeBody } from './dtos/reserve-time-body';
 
 @Controller('court')
 export class CourtController {
@@ -38,11 +39,9 @@ export class CourtController {
     }
   }
 
-  // @Post('createTimes')
-  // @HttpCode(HttpStatus.OK)
-  // createTime(@Body() createTimeBody : CreateTimeBody, @Request() request : AuthRequest) {
-  //   if (request.user.court.length != 0){
-  //     return this.courtService.createTimes(createTimeBody)
-  //   }
-  // }
+  @Post('reserveTime')
+  @HttpCode(HttpStatus.OK)
+  reserveTime(@Body() reserveTimeBody : ReserveTimeBody, @Request() request : AuthRequest){
+    return this.courtService.reserveTime(reserveTimeBody, request.user)
+  }
 }
