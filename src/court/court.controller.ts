@@ -69,7 +69,7 @@ export class CourtController {
   @IsPublic()
   @Post('releaseTime')
   @HttpCode(HttpStatus.OK)
-  releaseTime(@Body() releaseTimeBody : ReleaseTimebody) {
+  releaseTime(@Body() releaseTimeBody : ReserveTimeBody) {
     return this.courtService.releaseTime(releaseTimeBody)
   }
 }

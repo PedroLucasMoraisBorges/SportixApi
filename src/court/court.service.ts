@@ -6,6 +6,7 @@ import { UserLogin } from 'src/user/entities/user.entity';
 import { CreateOperatingDayBody } from './dtos/create-operatingDay-body';
 import { TimeForUSer } from './entities/time.entity';
 import { ReserveTimeBody } from './dtos/reserve-time-body';
+import { CloseTimeBody } from './dtos/close-time-body';
 
 @Injectable()
 export class CourtService {
@@ -246,7 +247,7 @@ export class CourtService {
     return closure
   }
 
-  async releaseTime(releaseTimeBody:ReleaseTimebody) {
+  async releaseTime(releaseTimeBody:ReserveTimeBody) {
     const { fk_court, date, hour } = releaseTimeBody
 
     const isFreeGame = await this.prisma.freeGame.findMany({
