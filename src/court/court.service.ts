@@ -6,6 +6,7 @@ import { UserLogin } from 'src/user/entities/user.entity';
 import { CreateOperatingDayBody } from './dtos/create-operatingDay-body';
 import { TimeForUSer } from './entities/time.entity';
 import { ReserveTimeBody } from './dtos/reserve-time-body';
+import { CloseTimeBody } from './dtos/close-time-body';
 
 @Injectable()
 export class CourtService {
@@ -219,4 +220,31 @@ export class CourtService {
     return listReservations;
   }
 
+async closeTime(closeTimeBody: CloseTimeBody) {
+    const { fk_court, date, hour } = closeTimeBody
+
+    const isClosure = await this.prisma.closure.findMany({
+      where: {
+        fk_court : fk_court,
+        date : date,
+        hour: hour
+      }
+    })
+
+    if (isClosure.length != 0) {
+      throw new Error("O horário desse dia já está fechado")
+    }
+
+    const closure = await this.prisma.closure.create({
+      data: {
+        id : randomUUID(),
+        date: date,
+        hour : hour,
+        court : {connect : {id: fk_court}},
+      }
+    })
+
+    return closure
+  }
+  
 }
