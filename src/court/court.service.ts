@@ -219,4 +219,58 @@ export class CourtService {
     return listReservations;
   }
 
+  async closeTime(closeTimeBody: CloseTimeBody) {
+    const { fk_court, date, hour } = closeTimeBody
+
+    const isClosure = await this.prisma.closure.findMany({
+      where: {
+        fk_court : fk_court,
+        date : date,
+        hour: hour
+      }
+    })
+
+    if (isClosure.length != 0) {
+      throw new Error("O horário desse dia já está fechado")
+    }
+
+    const closure = await this.prisma.closure.create({
+      data: {
+        id : randomUUID(),
+        date: date,
+        hour : hour,
+        court : {connect : {id: fk_court}},
+      }
+    })
+
+    return closure
+  }
+
+  async releaseTime(releaseTimeBody:ReleaseTimebody) {
+    const { fk_court, date, hour } = releaseTimeBody
+
+    const isFreeGame = await this.prisma.freeGame.findMany({
+      where: {
+        fk_court : fk_court,
+        date : date,
+        hour: hour
+      }
+    })
+
+    if (isFreeGame.length != 0) {
+      throw new Error("O horário desse dia já está fechado")
+    }
+
+    const freeGame = await this.prisma.freeGame.create({
+      data: {
+        id : randomUUID(),
+        date: date,
+        hour : hour,
+        court : {connect : {id: fk_court}},
+      }
+    })
+
+    return freeGame
+  }
+
 }
