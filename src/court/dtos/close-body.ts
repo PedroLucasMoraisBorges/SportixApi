@@ -13,3 +13,13 @@ export class CloseTimeBody {
     @IsString()
     fk_court : string
 }
+
+export class CloseDayBody {
+    @IsNotEmpty()
+    @IsString()
+    date : string
+
+    @IsNotEmpty()
+    @IsString()
+    fk_court : string
+}

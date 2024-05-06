@@ -6,12 +6,13 @@ import { UserLogin } from 'src/user/entities/user.entity';
 import { CreateOperatingDayBody } from './dtos/create-operatingDay-body';
 import { TimeForUSer } from './entities/time.entity';
 import { ReserveTimeBody } from './dtos/reserve-time-body';
-import { CloseTimeBody } from './dtos/close-time-body';
+import { CloseDayBody, CloseTimeBody } from './dtos/close-body';
 
 @Injectable()
 export class CourtService {
 
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
+
   async create(object: CreateCourtBody, user) {
 
     const court = await this.prisma.court.create({
@@ -54,6 +55,18 @@ export class CourtService {
     return dayNames[diaSemana];
   }
 
+  private async closureFindMany(hour, fk_court, date){
+    const closure = await this.prisma.closure.findMany({
+      where: {
+        hour: hour,
+        fk_court: fk_court,
+        date: date
+      }
+    })
+
+    return closure
+  }
+
   async getCourtInfo(id, date) {
     // Pega qual dia da semana é essa data
     const nomeDiaSemana = await this.getWekendDay(date)
@@ -85,15 +98,9 @@ export class CourtService {
         }
       })
 
-      const closure = await this.prisma.closure.findMany({
-        where: {
-          hour: time.hour,
-          fk_court: id,
-          date: date
-        }
-      })
+      const closure = await this.closureFindMany(time.hour, id, date)
 
-      const timeForUser: TimeForUSer = {
+      const timeForUser : TimeForUSer = {
         id: time.id,
         hour: time.hour,
         status: "livre"
@@ -259,7 +266,7 @@ export class CourtService {
     })
 
     if (isFreeGame.length != 0) {
-      throw new Error("O horário desse dia já está fechado")
+      throw new Error("O horário desse dia já está aberto")
     }
 
     const freeGame = await this.prisma.freeGame.create({
@@ -272,6 +279,57 @@ export class CourtService {
     })
 
     return freeGame
+  }
+
+  async closeDay(closeDayBody : CloseDayBody) {
+    const {fk_court, date} = closeDayBody
+
+    const nomeDiaSemana = await this.getWekendDay(date)
+
+    const operatingDay = await this.prisma.operatingDay.findMany({
+      where: {
+        fk_court: fk_court,
+        day: nomeDiaSemana
+      },
+      include: { Times: true }
+    })
+
+    const response = []
+
+    for (const time of operatingDay[0].Times) {
+      const haveReservation = await this.prisma.reservation.findMany({
+        where: {
+          fk_court : fk_court,
+          hour : time.hour,
+          date : date
+        }
+      })
+
+      if (haveReservation.length == 0) {
+        const haveClosure = await this.closureFindMany(time.hour, fk_court, date)
+
+        if (haveClosure.length == 0) {
+          const closure = await this.prisma.closure.create({
+            data: {
+              id : randomUUID(),
+              date: date,
+              hour : time.hour,
+              court : {connect : {id: fk_court}},
+            }
+          })
+
+          response.push(closure)
+        }
+        else{
+          response.push('O horário '+time.hour+' já está fechado')
+        }
+      }
+      else {
+        response.push('O horário '+time.hour+' está reservado, trate com o cliente sobre isso')
+      }
+    }
+
+    return response
   }
 
 }
