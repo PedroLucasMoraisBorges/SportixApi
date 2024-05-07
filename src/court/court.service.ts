@@ -7,11 +7,13 @@ import { CreateOperatingDayBody } from './dtos/create-operatingDay-body';
 import { TimeForUSer } from './entities/time.entity';
 import { ReserveTimeBody } from './dtos/reserve-time-body';
 import { CancelReservationBody, CloseDayBody, CloseTimeBody } from './dtos/close-body';
+import { SelectRecurrenceRangeBody } from './dtos/recurrence-user-body';
+import { CourtUtilits } from './utilits/court.utilits';
 
 @Injectable()
 export class CourtService {
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly courtUtilits: CourtUtilits) { }
 
   async create(object: CreateCourtBody, user) {
 
@@ -44,32 +46,9 @@ export class CourtService {
     return courts
   }
 
-  private async getWekendDay(date): Promise<string> {
-    const partesData: string[] = date.split("-");
-    const data: Date = new Date(parseInt(partesData[2]), parseInt(partesData[1]) - 1, parseInt(partesData[0]));
-
-    const dayNames: string[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-    const diaSemana: number = data.getDay();
-
-    return dayNames[diaSemana];
-  }
-
-  private async closureFindMany(hour, fk_court, date){
-    const closure = await this.prisma.closure.findMany({
-      where: {
-        hour: hour,
-        fk_court: fk_court,
-        date: date
-      }
-    })
-
-    return closure
-  }
-
   async getCourtInfo(id, date) {
     // Pega qual dia da semana é essa data
-    const nomeDiaSemana = await this.getWekendDay(date)
+    const nomeDiaSemana = await this.courtUtilits.getWekendDay(date)
 
     const operatingDay = await this.prisma.operatingDay.findMany({
       where: {
@@ -81,6 +60,7 @@ export class CourtService {
 
     const returningTimes = []
 
+
     for (const time of operatingDay[0].Times) {
       const reservation = await this.prisma.reservation.findMany({
         where: {
@@ -91,7 +71,12 @@ export class CourtService {
         }
       })
 
-      console.log(reservation)
+      const recurrenceUser = await this.prisma.recurrenceUser.findFirst({
+        where: {
+          fk_day: operatingDay[0].id,
+          fk_time: time.id
+        }
+      })
 
       const freeGame = await this.prisma.freeGame.findMany({
         where: {
@@ -101,9 +86,10 @@ export class CourtService {
         }
       })
 
-      const closure = await this.closureFindMany(time.hour, id, date)
 
-      const timeForUser : TimeForUSer = {
+      const closure = await this.courtUtilits.closureFindMany(time.hour, id, date)
+
+      const timeForUser: TimeForUSer = {
         id: time.id,
         hour: time.hour,
         status: "livre"
@@ -118,9 +104,23 @@ export class CourtService {
       else if (closure.length != 0) {
         timeForUser.status = "Fechado"
       }
+      else if (recurrenceUser !== null) {
+        const currentDate = this.courtUtilits.formateDateRequest(date)
+        const start_date = this.courtUtilits.formateDateRequest(recurrenceUser.start_date)
+
+        const dates = await this.courtUtilits.getDates(start_date, recurrenceUser.range_days, currentDate);
+
+        dates.forEach(date => {
+          const formattedDate = this.courtUtilits.formatDate(date); // Formata a data antes de exibir
+          if (formattedDate === currentDate) {
+            timeForUser.status = "Reservado"
+          }
+        });
+      }
       else {
         timeForUser.status = "Livre"
       }
+
 
       returningTimes.push(timeForUser)
     }
@@ -187,7 +187,7 @@ export class CourtService {
         court: { connect: { id: fk_court } },
         hour: hour,
         date: date,
-        status : "Agendado",
+        status: "Agendado",
         client: { connect: { id: client.id } }
       }
     })
@@ -236,8 +236,8 @@ export class CourtService {
 
     const isClosure = await this.prisma.closure.findMany({
       where: {
-        fk_court : fk_court,
-        date : date,
+        fk_court: fk_court,
+        date: date,
         hour: hour
       }
     })
@@ -248,23 +248,23 @@ export class CourtService {
 
     const closure = await this.prisma.closure.create({
       data: {
-        id : randomUUID(),
+        id: randomUUID(),
         date: date,
-        hour : hour,
-        court : {connect : {id: fk_court}},
+        hour: hour,
+        court: { connect: { id: fk_court } },
       }
     })
 
     return closure
   }
 
-  async releaseTime(releaseTimeBody:ReserveTimeBody) {
+  async releaseTime(releaseTimeBody: ReserveTimeBody) {
     const { fk_court, date, hour } = releaseTimeBody
 
     const isFreeGame = await this.prisma.freeGame.findMany({
       where: {
-        fk_court : fk_court,
-        date : date,
+        fk_court: fk_court,
+        date: date,
         hour: hour
       }
     })
@@ -275,20 +275,20 @@ export class CourtService {
 
     const freeGame = await this.prisma.freeGame.create({
       data: {
-        id : randomUUID(),
+        id: randomUUID(),
         date: date,
-        hour : hour,
-        court : {connect : {id: fk_court}},
+        hour: hour,
+        court: { connect: { id: fk_court } },
       }
     })
 
     return freeGame
   }
 
-  async closeDay(closeDayBody : CloseDayBody) {
-    const {fk_court, date} = closeDayBody
+  async closeDay(closeDayBody: CloseDayBody) {
+    const { fk_court, date } = closeDayBody
 
-    const nomeDiaSemana = await this.getWekendDay(date)
+    const nomeDiaSemana = await this.courtUtilits.getWekendDay(date)
 
     const operatingDay = await this.prisma.operatingDay.findMany({
       where: {
@@ -303,33 +303,33 @@ export class CourtService {
     for (const time of operatingDay[0].Times) {
       const haveReservation = await this.prisma.reservation.findMany({
         where: {
-          fk_court : fk_court,
-          hour : time.hour,
-          date : date
+          fk_court: fk_court,
+          hour: time.hour,
+          date: date
         }
       })
 
       if (haveReservation.length == 0) {
-        const haveClosure = await this.closureFindMany(time.hour, fk_court, date)
+        const haveClosure = await this.courtUtilits.closureFindMany(time.hour, fk_court, date)
 
         if (haveClosure.length == 0) {
           const closure = await this.prisma.closure.create({
             data: {
-              id : randomUUID(),
+              id: randomUUID(),
               date: date,
-              hour : time.hour,
-              court : {connect : {id: fk_court}},
+              hour: time.hour,
+              court: { connect: { id: fk_court } },
             }
           })
 
           response.push(closure)
         }
-        else{
-          response.push('O horário '+time.hour+' já está fechado')
+        else {
+          response.push('O horário ' + time.hour + ' já está fechado')
         }
       }
       else {
-        response.push('O horário '+time.hour+' está reservado, trate com o cliente sobre isso')
+        response.push('O horário ' + time.hour + ' está reservado, trate com o cliente sobre isso')
       }
     }
 
@@ -338,15 +338,15 @@ export class CourtService {
 
   async getUserReservations(client) {
     const reservation = await this.prisma.reservation.findMany({
-      where : {
-        fk_user : client.id
+      where: {
+        fk_user: client.id
       }
     })
 
     return reservation
   }
 
-  async cancelReservation(cancelReservationBody : CancelReservationBody) {
+  async cancelReservation(cancelReservationBody: CancelReservationBody) {
     const { idReservation } = cancelReservationBody
     const cancelReservation = await this.prisma.reservation.update({
       where: {
@@ -359,5 +359,35 @@ export class CourtService {
 
     return cancelReservation
   }
-}
+
+  async turnRecurrentUser(selectRecurrenceRangeBody: SelectRecurrenceRangeBody, user) {
+    const { fk_court, hour, day, range_days } = selectRecurrenceRangeBody
+
+    const operatingDay = await this.prisma.operatingDay.findFirst({
+      where: {
+        fk_court: fk_court,
+        day: day
+      }
+    })
+
+    const time = await this.prisma.time.findFirst({
+      where: {
+        fk_operating_day: operatingDay.id,
+        hour: hour
+      }
+    })
+
+    const recurrenceUser = await this.prisma.recurrenceUser.create({
+      data: {
+        id: randomUUID(),
+        range_days: range_days,
+        court: { connect: { id: fk_court } },
+        time: { connect: { id: time.id } },
+        day: { connect: { id: operatingDay.id } },
+        user: { connect: { id: user.id } }
+      }
+    })
+
+    return recurrenceUser
+  }
 }
