@@ -83,3 +83,14 @@ model Closure {
   hour     String
   court    Court  @relation(fields: [fk_court], references: [id])
 }
+
+model Reservation {
+  id       String @id
+  fk_user  String
+  fk_court String
+  date     String
+  hour     String
+  status   String @default("")
+  court    Court  @relation(fields: [fk_court], references: [id])
+  client   User   @relation(fields: [fk_user], references: [id])
+}

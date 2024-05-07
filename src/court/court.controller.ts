@@ -5,7 +5,7 @@ import { AuthRequest } from 'src/auth/models/AuthRequest';
 import { CreateOperatingDayBody } from './dtos/create-operatingDay-body';
 import { IsPublic } from 'src/auth/decorators/is-public.decorator';
 import { ReserveTimeBody } from './dtos/reserve-time-body';
-import { CloseTimeBody } from './dtos/close-time-body';
+import { CancelReservationBody, CloseDayBody, CloseTimeBody } from './dtos/close-body';
 
 @Controller('court')
 export class CourtController {
@@ -66,4 +66,30 @@ export class CourtController {
     return this.courtService.closeTime(closeTimeBody)
   }
   
+  @IsPublic()
+  @Post('releaseTime')
+  @HttpCode(HttpStatus.OK)
+  releaseTime(@Body() releaseTimeBody : ReserveTimeBody) {
+    return this.courtService.releaseTime(releaseTimeBody)
+  }
+
+  @IsPublic()
+  @Post('closeDay')
+  @HttpCode(HttpStatus.OK)
+  closeDay(@Body() closeDayBody : CloseDayBody) {
+    return this.courtService.closeDay(closeDayBody)
+  }
+
+  @Get('getUserReservations')
+  @HttpCode(HttpStatus.OK)
+  getUserReservations(@Request() request : AuthRequest){
+    return this.courtService.getUserReservations(request.user)
+  }
+
+  @Post('cancelReservation')
+  @HttpCode(HttpStatus.OK)
+  cancelReservation(@Body() cancelReservationBody : CancelReservationBody){
+    return this.courtService.cancelReservation(cancelReservationBody)
+  }
+}
 }
