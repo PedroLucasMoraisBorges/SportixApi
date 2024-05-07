@@ -6,7 +6,7 @@ import { UserLogin } from 'src/user/entities/user.entity';
 import { CreateOperatingDayBody } from './dtos/create-operatingDay-body';
 import { TimeForUSer } from './entities/time.entity';
 import { ReserveTimeBody } from './dtos/reserve-time-body';
-import { CloseDayBody, CloseTimeBody } from './dtos/close-body';
+import { CancelReservationBody, CloseDayBody, CloseTimeBody } from './dtos/close-body';
 
 @Injectable()
 export class CourtService {
@@ -86,9 +86,12 @@ export class CourtService {
         where: {
           hour: time.hour,
           fk_court: id,
-          date: date
+          date: date,
+          status: "Agendado"
         }
       })
+
+      console.log(reservation)
 
       const freeGame = await this.prisma.freeGame.findMany({
         where: {
@@ -184,6 +187,7 @@ export class CourtService {
         court: { connect: { id: fk_court } },
         hour: hour,
         date: date,
+        status : "Agendado",
         client: { connect: { id: client.id } }
       }
     })
@@ -332,4 +336,27 @@ export class CourtService {
     return response
   }
 
+  async getUserReservations(client) {
+    const reservation = await this.prisma.reservation.findMany({
+      where : {
+        fk_user : client.id
+      }
+    })
+
+    return reservation
+  }
+
+  async cancelReservation(cancelReservationBody : CancelReservationBody) {
+    const { idReservation } = cancelReservationBody
+    const cancelReservation = await this.prisma.reservation.update({
+      where: {
+        id: idReservation
+      },
+      data: {
+        status: "Cancelado"
+      }
+    });
+
+    return cancelReservation
+  }
 }

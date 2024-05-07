@@ -23,3 +23,9 @@ export class CloseDayBody {
     @IsString()
     fk_court : string
 }
+
+export class CancelReservationBody {
+    @IsNotEmpty()
+    @IsString()
+    idReservation : string
+}
