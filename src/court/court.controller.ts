@@ -6,6 +6,7 @@ import { CreateOperatingDayBody } from './dtos/create-operatingDay-body';
 import { IsPublic } from 'src/auth/decorators/is-public.decorator';
 import { ReserveTimeBody } from './dtos/reserve-time-body';
 import { CancelReservationBody, CloseDayBody, CloseTimeBody } from './dtos/close-body';
+import { SelectRecurrenceRangeBody } from './dtos/recurrence-user-body';
 
 @Controller('court')
 export class CourtController {
@@ -91,5 +92,10 @@ export class CourtController {
   cancelReservation(@Body() cancelReservationBody : CancelReservationBody){
     return this.courtService.cancelReservation(cancelReservationBody)
   }
-}
+
+  @Post('turnRecurrentUser')
+  @HttpCode(HttpStatus.OK)
+  turnRecurrentUser(@Body() selectRecurrenceRangeBody : SelectRecurrenceRangeBody, @Request() request : AuthRequest) {
+    return this.courtService.turnRecurrentUser(selectRecurrenceRangeBody, request.user)
+  }
 }

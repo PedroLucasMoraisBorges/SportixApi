@@ -14,48 +14,52 @@ datasource db {
 }
 
 model User {
-  id          String        @id
-  name        String
-  cpf         String        @unique
-  phoneNumber String        @unique
-  email       String        @unique
-  password    String
-  Times       Time[]
-  Court       Court[]
-  Reservation Reservation[]
+  id             String           @id
+  name           String
+  cpf            String           @unique
+  phoneNumber    String           @unique
+  email          String           @unique
+  password       String
+  Times          Time[]
+  Court          Court[]
+  Reservation    Reservation[]
+  RecurrenceUser RecurrenceUser[]
 }
 
 model Court {
-  id           String         @id
-  name         String
-  road         String
-  city         String
-  number       String
-  reference    String
-  neighborhood String
-  fk_user      String
-  user         User           @relation(fields: [fk_user], references: [id], onDelete: Cascade)
-  OperatingDay OperatingDay[]
-  Reservation  Reservation[]
-  FreeGame     FreeGame[]
-  Closure      Closure[]
+  id             String           @id
+  name           String
+  road           String
+  city           String
+  number         String
+  reference      String
+  neighborhood   String
+  fk_user        String
+  user           User             @relation(fields: [fk_user], references: [id], onDelete: Cascade)
+  OperatingDay   OperatingDay[]
+  Reservation    Reservation[]
+  FreeGame       FreeGame[]
+  Closure        Closure[]
+  RecurrenceUser RecurrenceUser[]
 }
 
 model OperatingDay {
-  id       String @id
-  day      String
-  fk_court String
-  court    Court  @relation(fields: [fk_court], references: [id], onDelete: Cascade)
-  Times    Time[]
+  id             String           @id
+  day            String
+  fk_court       String
+  court          Court            @relation(fields: [fk_court], references: [id], onDelete: Cascade)
+  Times          Time[]
+  RecurrenceUser RecurrenceUser[]
 }
 
 model Time {
-  id               String       @id
+  id               String           @id
   hour             String
   fk_operating_day String
   fk_user          String?
-  operatingDay     OperatingDay @relation(fields: [fk_operating_day], references: [id], onDelete: Cascade)
-  user             User?        @relation(fields: [fk_user], references: [id])
+  operatingDay     OperatingDay     @relation(fields: [fk_operating_day], references: [id], onDelete: Cascade)
+  user             User?            @relation(fields: [fk_user], references: [id])
+  RecurrenceUser   RecurrenceUser[]
 }
 
 model Reservation {
@@ -64,6 +68,7 @@ model Reservation {
   fk_court String
   date     String
   hour     String
+  status   String @default("")
   court    Court  @relation(fields: [fk_court], references: [id])
   client   User   @relation(fields: [fk_user], references: [id])
 }
@@ -84,13 +89,16 @@ model Closure {
   court    Court  @relation(fields: [fk_court], references: [id])
 }
 
-model Reservation {
-  id       String @id
-  fk_user  String
-  fk_court String
-  date     String
-  hour     String
-  status   String @default("")
-  court    Court  @relation(fields: [fk_court], references: [id])
-  client   User   @relation(fields: [fk_user], references: [id])
+model RecurrenceUser {
+  id         String       @id
+  range_days Int
+  start_date String       @default("")
+  fk_court   String
+  fk_day     String
+  fk_time    String
+  fk_user    String
+  time       Time         @relation(fields: [fk_time], references: [id])
+  court      Court        @relation(fields: [fk_court], references: [id])
+  user       User         @relation(fields: [fk_user], references: [id])
+  day        OperatingDay @relation(fields: [fk_day], references: [id])
 }
