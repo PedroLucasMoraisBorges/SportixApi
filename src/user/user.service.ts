@@ -8,6 +8,7 @@ import { CreateUserBody } from './dtos/create-user-body';
 export class UserService {
   constructor(private readonly prisma: PrismaService) { }
   async create(object: CreateUserBody) {    
+
     const email = object.email
 
     if (object.password1 != object.password2) {
@@ -42,5 +43,10 @@ export class UserService {
     return await this.prisma.user.findUnique({
         where: { email }
     });
+  }
+
+  async getUserNames(): Promise<string[]> {
+    const users = await this.prisma.user.findMany();
+    return users.map(user => user.name);
   }
 }

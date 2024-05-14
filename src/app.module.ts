@@ -1,4 +1,5 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import * as cors from 'cors'; // Importa o módulo cors
 import { AppController } from './app.controller';
 import { UserController } from './user/user.controller';
 import { AuthController } from './auth/auth.controller';
@@ -15,9 +16,16 @@ import { CourtModule } from './court/court.module';
   controllers: [AppController, UserController, AuthController],
   providers: [
     {
-      provide : APP_GUARD,
-      useClass : JwtAuthGuard
-    }
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(cors({
+      origin: 'http://localhost:5173', // ou a origem específica da sua aplicação Angular
+      credentials: true // permitir credenciais
+    })).forRoutes('*'); // Aplica o middleware de CORS a todas as rotas
+  }
+}
