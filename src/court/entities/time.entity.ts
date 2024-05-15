@@ -13,5 +13,5 @@ export class TimeForUSer{
 export class ReserveTime{
     fk_court : string
     date : string
-    hour : string
+    hours : string[]
 }

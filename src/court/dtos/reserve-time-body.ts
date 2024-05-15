@@ -12,5 +12,5 @@ export class ReserveTimeBody implements ReserveTime{
 
     @IsNotEmpty()
     @IsString()
-    hour: string;
+    hours: string[];
 }
