@@ -3,7 +3,7 @@ import { IsNotEmpty, IsString } from "class-validator"
 export class CloseTimeBody {
     @IsNotEmpty()
     @IsString()
-    hour : string
+    hours : string[]
 
     @IsNotEmpty()
     @IsString()

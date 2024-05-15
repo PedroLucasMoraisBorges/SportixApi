@@ -7,6 +7,7 @@ import { IsPublic } from 'src/auth/decorators/is-public.decorator';
 import { ReserveTimeBody } from './dtos/reserve-time-body';
 import { CancelReservationBody, CloseDayBody, CloseTimeBody } from './dtos/close-body';
 import { SelectRecurrenceRangeBody } from './dtos/recurrence-user-body';
+import { ReleaseTimebody } from './dtos/release-time-body';
 
 @Controller('court')
 export class CourtController {
@@ -31,6 +32,12 @@ export class CourtController {
   @HttpCode(HttpStatus.OK)
   getCourtInfo(@Request() request : AuthRequest) {
     return this.courtService.getCourtInfo(request.params.id, request.params.date)
+  }
+
+  @Get('getUserCourtInfo/:id/:date')
+  @HttpCode(HttpStatus.OK)
+  getUserCourtInfo(@Request() request : AuthRequest) {
+    return this.courtService.getUserCourtInfo(request.params.id, request.params.date)
   }
 
   @Post('createOperatingDays')
@@ -70,7 +77,7 @@ export class CourtController {
   @IsPublic()
   @Post('releaseTime')
   @HttpCode(HttpStatus.OK)
-  releaseTime(@Body() releaseTimeBody : ReserveTimeBody) {
+  releaseTime(@Body() releaseTimeBody : ReleaseTimebody) {
     return this.courtService.releaseTime(releaseTimeBody)
   }
 
