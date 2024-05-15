@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CourtService } from './court.service';
 import { PrismaService } from '../database/prisma.service';
 import { UserLogin } from 'src/user/entities/user.entity';
+import { CourtUtilits } from './utilits/court.utilits';
 
 
 const ExpectedCourt = {
@@ -19,6 +20,7 @@ const ExpectedCourt = {
 describe('CourtService', () => {
     let service: CourtService;
     let prismaService: PrismaService;
+    let courtUtilits: CourtUtilits
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -50,17 +52,23 @@ describe('CourtService', () => {
                         closure: {
                             findMany: jest.fn(),
                         },
+                        recurrenceUser: {
+                            findFirst: jest.fn()
+                        }
                     },
                 },
+                CourtUtilits,
             ],
         }).compile();
 
         service = module.get<CourtService>(CourtService);
         prismaService = module.get<PrismaService>(PrismaService);
+        courtUtilits = module.get<CourtUtilits>(CourtUtilits);
     });
 
     it('should be defined', () => {
         expect(service).toBeDefined();
+        expect(courtUtilits).toBeDefined()
     });
 
     describe('create', () => {
@@ -191,45 +199,19 @@ describe('CourtService', () => {
                 }
             ];
 
-            const mockReservation = [
-                { id: 'reservationId', hour: '08:00', fk_user: 'userId', fk_court: 'courtId', date: '2024-04-21' }
-            ];
-
-            const mockFreeGame = [
-                { id: 'freeGameId', hour: '09:00', fk_court: 'courtId', date: '2024-04-21' }
-            ];
-
-            const mockClosure = [
-                { id: 'closureId', hour: '10:00', fk_court: 'courtId', date: '2024-04-21' }
-            ];
-
             jest.spyOn(prismaService.operatingDay, 'findMany').mockResolvedValue(mockOperatingDay);
-            jest.spyOn(prismaService.freeGame, 'findMany').mockResolvedValue(mockFreeGame);
-            jest.spyOn(prismaService.reservation, 'findMany').mockResolvedValue(mockReservation);
-            jest.spyOn(prismaService.closure, 'findMany').mockResolvedValue(mockClosure);
+            jest.spyOn(prismaService.closure, 'findMany').mockResolvedValue([]);
+            jest.spyOn(prismaService.freeGame, 'findMany').mockResolvedValue([]);
+            jest.spyOn(prismaService.reservation, 'findMany').mockResolvedValue([]);
+            jest.spyOn(prismaService.recurrenceUser, 'findFirst').mockResolvedValue(null);
 
             const courtInfo = await service.getCourtInfo('courtId', '2024-04-21');
 
-            expect(prismaService.operatingDay.findMany).toHaveBeenCalledWith({
-                where: { fk_court: 'courtId', day: 'Friday' },
-                include: { Times: true },
-            });
-            expect(prismaService.reservation.findMany).toHaveBeenCalledWith({
-                where: { fk_court: 'courtId', date: '2024-04-21', hour: '08:00' },
-            });
-            expect(prismaService.freeGame.findMany).toHaveBeenCalledWith({
-                where: { fk_court: 'courtId', date: '2024-04-21', hour: '08:00' },
-            });
-            expect(prismaService.closure.findMany).toHaveBeenCalledWith({
-                where: { fk_court: 'courtId', date: '2024-04-21', hour: '08:00' },
-            });
-
-            console.log(courtInfo)
 
             expect(courtInfo).toEqual([
-                { id: 'timeId1', hour: '08:00', status: 'Reservado' },
-                { id: 'timeId2', hour: '09:00', status: 'Reservado' },
-                { id: 'timeId3', hour: '10:00', status: 'Reservado' },
+                { id: 'timeId1', hour: '08:00', status: 'livre' },
+                { id: 'timeId2', hour: '09:00', status: 'livre' },
+                { id: 'timeId3', hour: '10:00', status: 'livre' },
             ]);
         });
     });

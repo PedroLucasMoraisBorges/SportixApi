@@ -142,10 +142,14 @@ export class CourtService {
           if (!haveRecurrenceUser) {
             returningTimes.push(timeForUser)
           }
+          else {
+            returningTimes.push(timeForUser)
+          }
+        }
+        else {
+          returningTimes.push(timeForUser)
         }
       }
-
-      returningTimes.push(timeForUser)
     }
 
     return returningTimes
