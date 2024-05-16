@@ -10,15 +10,18 @@ import { AuthModule } from './auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { CourtModule } from './court/court.module';
+import { MailModule } from './mail/mail.module';
+import { MyMailerService } from './mail/mail.service';
 
 @Module({
-  imports: [JwtModule, UserModule, PrismaModule, AuthModule, CourtModule],
+  imports: [JwtModule, UserModule, PrismaModule, AuthModule, CourtModule, MailModule],
   controllers: [AppController, UserController, AuthController],
   providers: [
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
+    MyMailerService,
   ],
 })
 export class AppModule implements NestModule {
