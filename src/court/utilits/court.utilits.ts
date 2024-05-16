@@ -53,6 +53,21 @@ export class CourtUtilits {
         return dayNames[diaSemana];
     }
 
+    async getTimesOfDay(date, fk_court) {
+        const nomeDiaSemana = await this.getWekendDay(date)
+
+        const operatingDay = await this.prisma.operatingDay.findFirst({
+            where: {
+                fk_court: fk_court,
+                day: nomeDiaSemana
+            },
+            include: { Times: true }
+        })
+
+        const times = operatingDay.Times.map(time => time.hour);
+        return times;
+    }
+
     async closureFindMany(fk_court, date, hour) {
         const closures = await this.prisma.closure.findMany({
             where: {
@@ -69,6 +84,18 @@ export class CourtUtilits {
         const reservations = await this.prisma.reservation.findMany({
             where: {
                 hour: hour,
+                fk_court: fk_court,
+                date: date,
+                status: status
+            }
+        })
+
+        return reservations
+    }
+
+    async reservationDayFindMany(date, fk_court, status) {
+        const reservations = await this.prisma.reservation.findMany({
+            where: {
                 fk_court: fk_court,
                 date: date,
                 status: status
