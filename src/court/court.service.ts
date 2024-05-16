@@ -9,7 +9,7 @@ import { ReserveTimeBody } from './dtos/reserve-time-body';
 import { CancelReservationBody, CloseDayBody, CloseTimeBody } from './dtos/close-body';
 import { SelectRecurrenceRangeBody } from './dtos/recurrence-user-body';
 import { CourtUtilits } from './utilits/court.utilits';
-import { ReleaseTimebody } from './dtos/release-time-body';
+import { ReleaseDayBody, ReleaseTimebody } from './dtos/release-time-body';
 
 @Injectable()
 export class CourtService {
@@ -401,6 +401,57 @@ export class CourtService {
     })
 
     return freeGame
+  }
+
+  async releaseDay(releaseDayBody: ReleaseDayBody) {
+    const { dates, fk_court } = releaseDayBody
+
+    const dataReturn = {
+      "reservationsCanceled" : [],
+      "freeDaysCreateds" : []
+    }
+
+    for (const date of dates) {
+      const haveReservation = await this.courtUtilits.reservationDayFindMany(date, fk_court, "Agendado")
+
+      if (haveReservation.length != 0) {
+        for (const reservation of haveReservation) {
+          const updatedReservation = await this.prisma.reservation.update({
+            where: {
+              id: reservation.id
+            },
+            data: {
+              status: "Cancelado pela gerência"
+            }
+          })
+
+          dataReturn.reservationsCanceled.push(updatedReservation)
+
+          // Lógica para envio de Email
+        }
+      }
+
+      const timesOfDay = await this.courtUtilits.getTimesOfDay(date, fk_court)
+
+      for (const hour of timesOfDay) {
+        const haveFreeDay = await this.courtUtilits.freeGameFindMany(date, fk_court, hour)
+
+        if (haveFreeDay.length == 0) {
+          const freeDay = await this.prisma.freeGame.create({
+            data: {
+              id: randomUUID(),
+              date: date,
+              hour: hour,
+              court: { connect: { id: fk_court } }
+            }
+          })
+
+          dataReturn.freeDaysCreateds.push(freeDay)
+        }
+      }
+    }
+
+    return dataReturn
   }
 
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

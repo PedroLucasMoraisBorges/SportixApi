@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from "class-validator"
+import { IsArray, IsNotEmpty, IsString } from "class-validator"
 
 export class ReleaseTimebody {
     @IsNotEmpty()
@@ -12,4 +12,14 @@ export class ReleaseTimebody {
     @IsNotEmpty()
     @IsString()
     fk_court : string
+}
+
+export class ReleaseDayBody {
+    @IsNotEmpty()
+    @IsString()
+    fk_court: string
+
+    @IsNotEmpty()
+    @IsArray()
+    dates: string[]
 }
