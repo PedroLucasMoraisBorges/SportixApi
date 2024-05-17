@@ -10,11 +10,16 @@ import { CancelReservationBody, CloseDayBody, CloseTimeBody } from './dtos/close
 import { SelectRecurrenceRangeBody } from './dtos/recurrence-user-body';
 import { CourtUtilits } from './utilits/court.utilits';
 import { ReleaseDayBody, ReleaseTimebody } from './dtos/release-time-body';
+import { MyMailerService } from 'src/mail/mail.service';
 
 @Injectable()
 export class CourtService {
 
-  constructor(private readonly prisma: PrismaService, private readonly courtUtilits: CourtUtilits) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly courtUtilits: CourtUtilits,
+    private readonly mailService: MyMailerService
+  ) { }
 
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   // Criação e Manuntenção Quadras
@@ -412,7 +417,7 @@ export class CourtService {
     }
 
     for (const date of dates) {
-      const haveReservation = await this.courtUtilits.reservationDayFindMany(date, fk_court, "Agendado")
+      const haveReservation = await this.courtUtilits.reservationDayFindMany(date, fk_court, "Cancelado pela gerência")
 
       if (haveReservation.length != 0) {
         for (const reservation of haveReservation) {
@@ -424,10 +429,17 @@ export class CourtService {
               status: "Cancelado pela gerência"
             }
           })
-
           dataReturn.reservationsCanceled.push(updatedReservation)
 
-          // Lógica para envio de Email
+
+          // Envio de email
+
+          const user = await this.prisma.user.findUnique({
+            where: {
+              id: updatedReservation.fk_user
+            }
+          })
+          await this.mailService.sendUserConfirmation(user, "Reserva Cancelada", "./C_Reserve_Owner");
         }
       }
 
