@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/database/prisma.service';
 import { randomUUID } from 'crypto';
-import { CreateCourtBody } from './dtos/create-court-body';
+import { CreateCourtBody, EditCourtBody } from './dtos/create-court-body';
 import { UserLogin } from 'src/user/entities/user.entity';
 import { CreateOperatingDayBody } from './dtos/create-operatingDay-body';
 import { TimeForUSer } from './entities/time.entity';
@@ -11,6 +11,7 @@ import { SelectRecurrenceRangeBody } from './dtos/recurrence-user-body';
 import { CourtUtilits } from './utilits/court.utilits';
 import { ReleaseDayBody, ReleaseTimebody } from './dtos/release-time-body';
 import { MyMailerService } from 'src/mail/mail.service';
+import { EditCourt } from './entities/court.entity';
 
 @Injectable()
 export class CourtService {
@@ -94,6 +95,29 @@ export class CourtService {
     }
 
     return returnDays
+  }
+
+  async editCourt(editCourtBody : EditCourtBody) {
+    const { idCourt, name, road, neighborhood, city, number, reference } = editCourtBody;
+
+    const data : EditCourt = {};
+
+    if (name !== undefined && name !== null) data.name = name;
+    if (road !== undefined && road !== null) data.road = road;
+    if (neighborhood !== undefined && neighborhood !== null) data.neighborhood = neighborhood;
+    if (city !== undefined && city !== null) data.city = city;
+    if (number !== undefined && number !== null) data.number = number;
+    if (reference !== undefined && reference !== null) data.reference = reference;
+
+
+    const court = await this.prisma.court.update({
+      where: {
+        id: idCourt
+      },
+      data: data
+    });
+
+    return court;
   }
 
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -412,8 +436,8 @@ export class CourtService {
     const { dates, fk_court } = releaseDayBody
 
     const dataReturn = {
-      "reservationsCanceled" : [],
-      "freeDaysCreateds" : []
+      "reservationsCanceled": [],
+      "freeDaysCreateds": []
     }
 
     for (const date of dates) {

@@ -1,6 +1,6 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Request } from '@nestjs/common';
 import { CourtService } from './court.service';
-import { CreateCourtBody } from 'src/court/dtos/create-court-body';
+import { CreateCourtBody, EditCourtBody } from 'src/court/dtos/create-court-body';
 import { AuthRequest } from 'src/auth/models/AuthRequest';
 import { CreateOperatingDayBody } from './dtos/create-operatingDay-body';
 import { IsPublic } from 'src/auth/decorators/is-public.decorator';
@@ -17,6 +17,12 @@ export class CourtController {
   @HttpCode(HttpStatus.OK)
   create(@Body() createCourtDto: CreateCourtBody, @Request() request: AuthRequest) {
     return this.courtService.create(createCourtDto, request.user);
+  }
+
+  @Post('edit')
+  @HttpCode(HttpStatus.OK)
+  editCourt(@Body() editCourtBody : EditCourtBody) {
+    return this.courtService.editCourt(editCourtBody)
   }
 
   @Get('getUserCourts')
