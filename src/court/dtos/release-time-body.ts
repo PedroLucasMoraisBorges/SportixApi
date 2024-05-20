@@ -1,6 +1,7 @@
 import { IsArray, IsNotEmpty, IsString } from "class-validator"
+import { ReleaseDay, ReleaseTime } from "../entities/release.entity"
 
-export class ReleaseTimebody {
+export class ReleaseTimebody implements ReleaseTime {
     @IsNotEmpty()
     @IsString()
     hour : string
@@ -14,7 +15,7 @@ export class ReleaseTimebody {
     fk_court : string
 }
 
-export class ReleaseDayBody {
+export class ReleaseDayBody implements ReleaseDay {
     @IsNotEmpty()
     @IsString()
     fk_court: string

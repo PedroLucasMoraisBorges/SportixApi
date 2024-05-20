@@ -1,6 +1,7 @@
 import { IsNotEmpty, IsString } from "class-validator"
+import { CloseTime } from "../entities/time.entity"
 
-export class CloseTimeBody {
+export class CloseTimeBody implements CloseTime{
     @IsNotEmpty()
     @IsString()
     hours : string[]
