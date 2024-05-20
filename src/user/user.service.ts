@@ -9,12 +9,7 @@ import { EditUserBody } from './dtos/edit-user-body';
 @Injectable()
 export class UserService {
   constructor(private readonly prisma: PrismaService) { }
-<<<<<<< Updated upstream
   async create(object: CreateUserBody) {    
-=======
-  async create(object: CreateUserBody) {
->>>>>>> Stashed changes
-
     const email = object.email
 
     if (object.password1 != object.password2) {
@@ -55,8 +50,6 @@ export class UserService {
     const users = await this.prisma.user.findMany();
     return users.map(user => user.name);
   }
-<<<<<<< Updated upstream
-=======
 
   async getUserInfo(user: UserLogin) {
     const userInfo = {
@@ -88,5 +81,4 @@ export class UserService {
 
     return updatedUser;
   }
->>>>>>> Stashed changes
 }
