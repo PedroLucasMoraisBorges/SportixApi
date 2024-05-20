@@ -5,15 +5,21 @@ export class User {
     password2?: string;
     name: string;
     cpf: string;
-    phoneNumber : string;
+    phoneNumber: string;
 }
 
 export class UserLogin {
     id: string;
     email: string;
-    password : string
+    password: string
     name: string;
     cpf: string;
-    phoneNumber : string;
-    court : []
+    phoneNumber: string;
+    court: []
+}
+
+export class UserEdit {
+    name?: string;
+    cpf?: string;
+    phoneNumber?: string;
 }
