@@ -1,6 +1,7 @@
 import { IsNotEmpty, IsNumber, IsString } from "class-validator"
+import { RecurrenceUser } from "../entities/recurrenceUser.entity"
 
-export class SelectRecurrenceRangeBody {
+export class SelectRecurrenceRangeBody implements RecurrenceUser {
     @IsNotEmpty()
     @IsString()
     fk_court: string
