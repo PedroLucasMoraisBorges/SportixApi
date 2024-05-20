@@ -1,8 +1,4 @@
-<<<<<<< Updated upstream
-import { Body, Controller, Get, Post } from '@nestjs/common';
-=======
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Request } from '@nestjs/common';
->>>>>>> Stashed changes
 import { UserService } from './user.service';
 import { IsPublic } from 'src/auth/decorators/is-public.decorator';
 import { CreateUserBody } from 'src/user/dtos/create-user-body';
@@ -24,8 +20,6 @@ export class UserController {
   async getUserNames(): Promise<string[]> {
     return this.userService.getUserNames(); // Método para obter apenas os nomes dos usuários
   }
-<<<<<<< Updated upstream
-=======
 
   @Get('getUserInfo')
   @HttpCode(HttpStatus.OK)
@@ -38,5 +32,4 @@ export class UserController {
   editUser(@Body() editUserBody: EditUserBody, @Request() request: AuthRequest) {
     return this.userService.editUser(editUserBody, request.user)
   }
->>>>>>> Stashed changes
 }

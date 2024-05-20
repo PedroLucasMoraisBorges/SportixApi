@@ -1,3 +1,6 @@
+import { IsOptional, Length, Matches } from "class-validator";
+import { UserEdit } from "../entities/user.entity";
+
 export class EditUserBody implements UserEdit {
     @Length(15, 254)
     @IsOptional()
