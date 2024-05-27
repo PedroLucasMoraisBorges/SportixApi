@@ -12,6 +12,7 @@ import { CourtUtilits } from './utilits/court.utilits';
 import { ReleaseDayBody, ReleaseTimebody } from './dtos/release-time-body';
 import { MyMailerService } from 'src/mail/mail.service';
 import { EditCourt } from './entities/court.entity';
+import { DeleteCourtBody } from './dtos/delete-court.dto';
 
 @Injectable()
 export class CourtService {
@@ -118,6 +119,24 @@ export class CourtService {
     });
 
     return court;
+  }
+
+  async deleteCourt(deleteCourtBody : DeleteCourtBody, user : UserLogin) {
+    const {id_court} = deleteCourtBody
+
+    try {
+      const court = await this.prisma.court.delete({
+        where: {
+          id: id_court,
+          fk_user: user.id
+        }
+      })
+
+      return court
+    }
+    catch(error) {
+      throw new Error("Quadra não encontrada")
+    }
   }
 
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

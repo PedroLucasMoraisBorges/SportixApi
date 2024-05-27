@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Put, Request } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Post, Put, Request } from '@nestjs/common';
 import { CourtService } from './court.service';
 import { CreateCourtBody, EditCourtBody } from 'src/court/dtos/create-court-body';
 import { AuthRequest } from 'src/auth/models/AuthRequest';
@@ -8,6 +8,7 @@ import { ReserveTimeBody } from './dtos/reserve-time-body';
 import { CancelReservationBody, CloseDayBody, CloseTimeBody } from './dtos/close-body';
 import { SelectRecurrenceRangeBody } from './dtos/recurrence-user-body';
 import { ReleaseDayBody, ReleaseTimebody } from './dtos/release-time-body';
+import { DeleteCourtBody } from './dtos/delete-court.dto';
 
 @Controller('court')
 export class CourtController {
@@ -32,6 +33,14 @@ export class CourtController {
   @HttpCode(HttpStatus.OK)
   editCourt(@Body() editCourtBody : EditCourtBody) {
     return this.courtService.editCourt(editCourtBody)
+  }
+
+  @Delete('delete')
+  @HttpCode(HttpStatus.OK)
+  deleteCourt(@Body() deleteCourtBody : DeleteCourtBody, @Request() request : AuthRequest) {
+    if (request.user.court.length > 0) {
+      return this.courtService.deleteCourt(deleteCourtBody, request.user)
+    }
   }
 
   @Get('getUserCourts')
@@ -122,4 +131,3 @@ export class CourtController {
     return this.courtService.turnRecurrentUser(selectRecurrenceRangeBody, request.user)
   }
 }
-
