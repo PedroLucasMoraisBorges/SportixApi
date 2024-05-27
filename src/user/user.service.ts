@@ -72,7 +72,7 @@ export class UserService {
     if (cpf !== undefined && cpf !== null) data.cpf = cpf;
     if (phoneNumber !== undefined && phoneNumber !== null) data.phoneNumber = phoneNumber;
 
-    const updatedUser = await this.prisma.court.update({
+    const updatedUser = await this.prisma.user.update({
       where: {
         id: user.id
       },

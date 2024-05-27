@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from 'src/database/prisma.service';
 import { UserService } from './user.service';
 import { CreateUserBody } from './dtos/create-user-body';
-import * as bcrypt from 'bcrypt'
+import * as bcrypt from 'bcrypt';
 
 describe('UserService', () => {
   let service: UserService;
@@ -58,15 +58,16 @@ describe('UserService', () => {
         id: 'someId',
         ...user,
         password: 'hashedPassword',
+        isOwner: false, // Adiciona a propriedade isOwner
       });
 
       const result = await service.create(user);
-
 
       expect(result).toEqual({
         id: 'someId',
         ...user,
         password: 'hashedPassword',
+        isOwner: false, // Adiciona a propriedade isOwner
       });
     });
 
@@ -96,6 +97,7 @@ describe('UserService', () => {
         email: 'teste1@gmail.com',
         phoneNumber: '88997974194',
         password: 'hashedPassword', // Adiciona a propriedade password
+        isOwner: false, // Adiciona a propriedade isOwner
       };
 
       // Mocka a função findUnique para retornar o usuário encontrado
