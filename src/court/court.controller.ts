@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Request } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Put, Request } from '@nestjs/common';
 import { CourtService } from './court.service';
 import { CreateCourtBody, EditCourtBody } from 'src/court/dtos/create-court-body';
 import { AuthRequest } from 'src/auth/models/AuthRequest';
@@ -13,13 +13,22 @@ import { ReleaseDayBody, ReleaseTimebody } from './dtos/release-time-body';
 export class CourtController {
   constructor(private readonly courtService: CourtService) { }
 
+  // Admin
   @Post('create')
   @HttpCode(HttpStatus.OK)
   create(@Body() createCourtDto: CreateCourtBody, @Request() request: AuthRequest) {
     return this.courtService.create(createCourtDto, request.user);
   }
 
-  @Post('edit')
+  @Post('createOperatingDays')
+  @HttpCode(HttpStatus.OK)
+  createOperatingDays(@Body() createOperatingDayBody: CreateOperatingDayBody, @Request() request: AuthRequest) {
+    if (request.user.court.length != 0) {
+      return this.courtService.createOperatingDays(createOperatingDayBody)
+    }
+  }
+
+  @Put('edit')
   @HttpCode(HttpStatus.OK)
   editCourt(@Body() editCourtBody : EditCourtBody) {
     return this.courtService.editCourt(editCourtBody)
@@ -33,44 +42,10 @@ export class CourtController {
     }
   }
 
-  @IsPublic()
-  @Get('getCourtInfo/:id/:date')
-  @HttpCode(HttpStatus.OK)
-  getCourtInfo(@Request() request: AuthRequest) {
-    return this.courtService.getCourtInfo(request.params.id, request.params.date)
-  }
-
   @Get('getUserCourtInfo/:id/:date')
   @HttpCode(HttpStatus.OK)
   getUserCourtInfo(@Request() request: AuthRequest) {
     return this.courtService.getUserCourtInfo(request.params.id, request.params.date)
-  }
-
-  @Post('createOperatingDays')
-  @HttpCode(HttpStatus.OK)
-  createOperatingDays(@Body() createOperatingDayBody: CreateOperatingDayBody, @Request() request: AuthRequest) {
-    if (request.user.court.length != 0) {
-      return this.courtService.createOperatingDays(createOperatingDayBody)
-    }
-  }
-
-  @Post('reserveTime')
-  @HttpCode(HttpStatus.OK)
-  reserveTime(@Body() reserveTimeBody: ReserveTimeBody, @Request() request: AuthRequest) {
-    return this.courtService.reserveTime(reserveTimeBody, request.user)
-  }
-
-  @IsPublic()
-  @Get('getCourts/:id')
-  @HttpCode(HttpStatus.OK)
-  getCourts(@Request() request: AuthRequest) {
-    return this.courtService.getCourts(request.params.id)
-  }
-
-  @Get('getReservedTimes')
-  @HttpCode(HttpStatus.OK)
-  getReservedTimes(@Request() request: AuthRequest) {
-    return this.courtService.getReservedTimes(request.user)
   }
 
   @IsPublic()
@@ -101,6 +76,34 @@ export class CourtController {
     return this.courtService.closeDay(closeDayBody)
   }
 
+  // User
+
+  @IsPublic()
+  @Get('getCourtInfo/:id/:date')
+  @HttpCode(HttpStatus.OK)
+  getCourtInfo(@Request() request: AuthRequest) {
+    return this.courtService.getCourtInfo(request.params.id, request.params.date)
+  }
+
+  @Post('reserveTime')
+  @HttpCode(HttpStatus.OK)
+  reserveTime(@Body() reserveTimeBody: ReserveTimeBody, @Request() request: AuthRequest) {
+    return this.courtService.reserveTime(reserveTimeBody, request.user)
+  }
+
+  @IsPublic()
+  @Get('getCourts/:id')
+  @HttpCode(HttpStatus.OK)
+  getCourts(@Request() request: AuthRequest) {
+    return this.courtService.getCourts(request.params.id)
+  }
+
+  @Get('getReservedTimes')
+  @HttpCode(HttpStatus.OK)
+  getReservedTimes(@Request() request: AuthRequest) {
+    return this.courtService.getReservedTimes(request.user)
+  }
+
   @Get('getUserReservations')
   @HttpCode(HttpStatus.OK)
   getUserReservations(@Request() request: AuthRequest) {
@@ -119,3 +122,4 @@ export class CourtController {
     return this.courtService.turnRecurrentUser(selectRecurrenceRangeBody, request.user)
   }
 }
+
