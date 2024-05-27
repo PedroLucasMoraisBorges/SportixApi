@@ -135,6 +135,7 @@ describe('CourtService', () => {
         name: 'Mock User',
         cpf: '12345678900',
         phoneNumber: "88997974132",
+        isOwner: false,
         court: []
       };
       const mockCourts = [
@@ -179,6 +180,7 @@ describe('CourtService', () => {
         name: 'Mock User',
         cpf: '12345678900',
         phoneNumber: "88997974132",
+        isOwner: false,
         court: []
       };
 

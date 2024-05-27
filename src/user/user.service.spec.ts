@@ -47,18 +47,15 @@ describe('UserService', () => {
         password2: 'P3dro456@',
       };
 
-      // Mocka a função findUnique para retornar null, indicando que o e-mail não está em uso
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(null);
 
-      // Simula a geração de um hash de senha
       jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashedPassword');
 
-      // Simula a criação de um usuário
       jest.spyOn(prismaService.user, 'create').mockResolvedValue({
         id: 'someId',
         ...user,
         password: 'hashedPassword',
-        isOwner: false, // Adiciona a propriedade isOwner
+        isOwner: false,
       });
 
       const result = await service.create(user);
@@ -96,8 +93,8 @@ describe('UserService', () => {
         cpf: '08412345637',
         email: 'teste1@gmail.com',
         phoneNumber: '88997974194',
-        password: 'hashedPassword', // Adiciona a propriedade password
-        isOwner: false, // Adiciona a propriedade isOwner
+        password: 'hashedPassword',
+        isOwner: false, 
       };
 
       // Mocka a função findUnique para retornar o usuário encontrado
