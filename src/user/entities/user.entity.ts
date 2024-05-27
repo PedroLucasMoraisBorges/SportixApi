@@ -15,6 +15,7 @@ export class UserLogin {
     name: string;
     cpf: string;
     phoneNumber: string;
+    isOwner: boolean;
     court: []
 }
 
