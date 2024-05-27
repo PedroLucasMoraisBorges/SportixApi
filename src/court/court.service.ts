@@ -1,17 +1,30 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/database/prisma.service';
 import { randomUUID } from 'crypto';
-import { CreateCourtBody } from './dtos/create-court-body';
+import { CreateCourtBody, EditCourtBody } from './dtos/create-court-body';
 import { UserLogin } from 'src/user/entities/user.entity';
 import { CreateOperatingDayBody } from './dtos/create-operatingDay-body';
 import { TimeForUSer } from './entities/time.entity';
 import { ReserveTimeBody } from './dtos/reserve-time-body';
 import { CancelReservationBody, CloseDayBody, CloseTimeBody } from './dtos/close-body';
+import { SelectRecurrenceRangeBody } from './dtos/recurrence-user-body';
+import { CourtUtilits } from './utilits/court.utilits';
+import { ReleaseDayBody, ReleaseTimebody } from './dtos/release-time-body';
+import { MyMailerService } from 'src/mail/mail.service';
+import { EditCourt } from './entities/court.entity';
 
 @Injectable()
 export class CourtService {
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly courtUtilits: CourtUtilits,
+    private readonly mailService: MyMailerService
+  ) { }
+
+  // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  // Criação e Manuntenção Quadras
+  // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
   async create(object: CreateCourtBody, user) {
 
@@ -32,100 +45,6 @@ export class CourtService {
       court,
     }
 
-  }
-
-  async getUserCourts(user: UserLogin) {
-    const courts = await this.prisma.court.findMany({
-      where: {
-        fk_user: user.id
-      }
-    })
-
-    return courts
-  }
-
-  private async getWekendDay(date): Promise<string> {
-    const partesData: string[] = date.split("-");
-    const data: Date = new Date(parseInt(partesData[2]), parseInt(partesData[1]) - 1, parseInt(partesData[0]));
-
-    const dayNames: string[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-    const diaSemana: number = data.getDay();
-
-    return dayNames[diaSemana];
-  }
-
-  private async closureFindMany(hour, fk_court, date){
-    const closure = await this.prisma.closure.findMany({
-      where: {
-        hour: hour,
-        fk_court: fk_court,
-        date: date
-      }
-    })
-
-    return closure
-  }
-
-  async getCourtInfo(id, date) {
-    // Pega qual dia da semana é essa data
-    const nomeDiaSemana = await this.getWekendDay(date)
-
-    const operatingDay = await this.prisma.operatingDay.findMany({
-      where: {
-        fk_court: id,
-        day: nomeDiaSemana
-      },
-      include: { Times: true }
-    })
-
-    const returningTimes = []
-
-    for (const time of operatingDay[0].Times) {
-      const reservation = await this.prisma.reservation.findMany({
-        where: {
-          hour: time.hour,
-          fk_court: id,
-          date: date,
-          status: "Agendado"
-        }
-      })
-
-      console.log(reservation)
-
-      const freeGame = await this.prisma.freeGame.findMany({
-        where: {
-          hour: time.hour,
-          fk_court: id,
-          date: date
-        }
-      })
-
-      const closure = await this.closureFindMany(time.hour, id, date)
-
-      const timeForUser : TimeForUSer = {
-        id: time.id,
-        hour: time.hour,
-        status: "livre"
-      }
-
-      if (reservation.length != 0) {
-        timeForUser.status = "Reservado"
-      }
-      else if (freeGame.length != 0) {
-        timeForUser.status = "Jogo Livre"
-      }
-      else if (closure.length != 0) {
-        timeForUser.status = "Fechado"
-      }
-      else {
-        timeForUser.status = "Livre"
-      }
-
-      returningTimes.push(timeForUser)
-    }
-
-    return returningTimes
   }
 
   async createOperatingDays(object: CreateOperatingDayBody) {
@@ -178,21 +97,148 @@ export class CourtService {
     return returnDays
   }
 
-  async reserveTime(reserveTimeBody: ReserveTimeBody, client) {
-    const { fk_court, date, hour } = reserveTimeBody
+  async editCourt(editCourtBody : EditCourtBody) {
+    const { idCourt, name, road, neighborhood, city, number, reference } = editCourtBody;
 
-    const reservation = await this.prisma.reservation.create({
-      data: {
-        id: randomUUID(),
-        court: { connect: { id: fk_court } },
-        hour: hour,
-        date: date,
-        status : "Agendado",
-        client: { connect: { id: client.id } }
+    const data : EditCourt = {};
+
+    if (name !== undefined && name !== null) data.name = name;
+    if (road !== undefined && road !== null) data.road = road;
+    if (neighborhood !== undefined && neighborhood !== null) data.neighborhood = neighborhood;
+    if (city !== undefined && city !== null) data.city = city;
+    if (number !== undefined && number !== null) data.number = number;
+    if (reference !== undefined && reference !== null) data.reference = reference;
+
+
+    const court = await this.prisma.court.update({
+      where: {
+        id: idCourt
+      },
+      data: data
+    });
+
+    return court;
+  }
+
+  // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  // Requisição das quadras
+  // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+  async getUserCourts(user: UserLogin) {
+    const courts = await this.prisma.court.findMany({
+      where: {
+        fk_user: user.id
       }
     })
 
-    return reservation
+    return courts
+  }
+
+  async getCourtInfo(fk_court, date) {
+    const nomeDiaSemana = await this.courtUtilits.getWekendDay(date)
+
+    const operatingDay = await this.prisma.operatingDay.findMany({
+      where: {
+        fk_court: fk_court,
+        day: nomeDiaSemana
+      },
+      include: { Times: true }
+    })
+
+    const returningTimes = []
+
+    for (const time of operatingDay[0].Times) {
+      const haveReservation = await this.courtUtilits.reservationFindMany(fk_court, date, time.hour, "Agendado")
+      const haveFreeGame = await this.courtUtilits.freeGameFindMany(fk_court, date, time.hour)
+      const haveClosure = await this.courtUtilits.closureFindMany(time.hour, fk_court, date)
+
+      const recurrenceUser = await this.prisma.recurrenceUser.findFirst({
+        where: {
+          fk_day: operatingDay[0].id,
+          fk_time: time.id
+        }
+      })
+
+      const timeForUser: TimeForUSer = {
+        id: time.id,
+        hour: time.hour,
+        status: "livre"
+      }
+
+      if (haveReservation.length == 0 && haveFreeGame.length == 0 && haveClosure.length == 0) {
+        if (recurrenceUser !== null) {
+          const haveRecurrenceUser = await this.courtUtilits.validateRecurrenceUser(date, recurrenceUser);
+          if (!haveRecurrenceUser) {
+            returningTimes.push(timeForUser)
+          }
+          else {
+            returningTimes.push(timeForUser)
+          }
+        }
+        else {
+          returningTimes.push(timeForUser)
+        }
+      }
+    }
+
+    return returningTimes
+  }
+
+  async getUserCourtInfo(fk_court, date) {
+    const nomeDiaSemana = await this.courtUtilits.getWekendDay(date)
+
+    const operatingDay = await this.prisma.operatingDay.findMany({
+      where: {
+        fk_court: fk_court,
+        day: nomeDiaSemana
+      },
+      include: { Times: true }
+    })
+
+    const returningTimes = []
+
+    for (const time of operatingDay[0].Times) {
+      const haveReservation = await this.courtUtilits.reservationFindMany(fk_court, date, time.hour, "Agendado")
+      const haveFreeGame = await this.courtUtilits.freeGameFindMany(fk_court, date, time.hour)
+      const haveClosure = await this.courtUtilits.closureFindMany(time.hour, fk_court, date)
+
+      const recurrenceUser = await this.prisma.recurrenceUser.findFirst({
+        where: {
+          fk_day: operatingDay[0].id,
+          fk_time: time.id
+        }
+      })
+
+      const timeForUser: TimeForUSer = {
+        id: time.id,
+        hour: time.hour,
+        status: "livre"
+      }
+
+      if (haveReservation.length != 0) {
+        timeForUser.status = "Reservado"
+      }
+      else if (haveFreeGame.length != 0) {
+        timeForUser.status = "Jogo Livre"
+      }
+      else if (haveClosure.length != 0) {
+        timeForUser.status = "Fechado"
+      }
+      else if (recurrenceUser !== null) {
+        const haveRecurrenceUser = await this.courtUtilits.validateRecurrenceUser(date, recurrenceUser);
+
+        if (haveRecurrenceUser) {
+          timeForUser.status = "Reservado";
+        }
+      }
+      else {
+        timeForUser.status = "Livre"
+      }
+
+      returningTimes.push(timeForUser)
+    }
+
+    return returningTimes
   }
 
   async getCourts(ownerId) {
@@ -203,6 +249,16 @@ export class CourtService {
     })
 
     return courts
+  }
+
+  async getUserReservations(client) {
+    const reservation = await this.prisma.reservation.findMany({
+      where: {
+        fk_user: client.id
+      }
+    })
+
+    return reservation
   }
 
   async getReservedTimes(user) {
@@ -231,64 +287,85 @@ export class CourtService {
     return listReservations;
   }
 
+  // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  // Reserva de horários
+  // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+  async reserveTime(reserveTimeBody: ReserveTimeBody, client) {
+    const { fk_court, date, hours } = reserveTimeBody
+    const returnReservation = []
+
+    for (const hour of hours) {
+      const reservation = await this.prisma.reservation.create({
+        data: {
+          id: randomUUID(),
+          court: { connect: { id: fk_court } },
+          hour: hour,
+          date: date,
+          status: "Agendado",
+          client: { connect: { id: client.id } }
+        }
+      })
+
+      returnReservation.push(reservation)
+    }
+
+    return returnReservation
+  }
+
+  async cancelReservation(cancelReservationBody: CancelReservationBody) {
+    const { idReservation } = cancelReservationBody
+
+    const cancelReservation = await this.prisma.reservation.update({
+      where: {
+        id: idReservation
+      },
+      data: {
+        status: "Cancelado"
+      }
+    });
+
+    return cancelReservation
+  }
+
+  // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  // Fechar Horários
+  // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
   async closeTime(closeTimeBody: CloseTimeBody) {
-    const { fk_court, date, hour } = closeTimeBody
+    const { fk_court, date, hours } = closeTimeBody
+    const returnClosures = []
 
-    const isClosure = await this.prisma.closure.findMany({
-      where: {
-        fk_court : fk_court,
-        date : date,
-        hour: hour
+    for (const hour of hours) {
+      const haveClosure = await this.courtUtilits.closureFindMany(fk_court, date, hour)
+      const haveReservation = await this.courtUtilits.reservationFindMany(fk_court, date, hour, "Agendado")
+
+      if (haveClosure.length != 0) {
+        throw new Error("O horário desse dia já está fechado")
       }
-    })
+      if (haveReservation.length != 0) {
+        // Enviar email para o cliente sobre o cancelamento da sua reserva
+      }
 
-    if (isClosure.length != 0) {
-      throw new Error("O horário desse dia já está fechado")
+      const closure = await this.prisma.closure.create({
+        data: {
+          id: randomUUID(),
+          date: date,
+          hour: hour,
+          court: { connect: { id: fk_court } },
+        }
+      })
+
+      returnClosures.push(closure)
     }
 
-    const closure = await this.prisma.closure.create({
-      data: {
-        id : randomUUID(),
-        date: date,
-        hour : hour,
-        court : {connect : {id: fk_court}},
-      }
-    })
-
-    return closure
+    return returnClosures
   }
 
-  async releaseTime(releaseTimeBody:ReserveTimeBody) {
-    const { fk_court, date, hour } = releaseTimeBody
+  async closeDay(closeDayBody: CloseDayBody) {
+    const { fk_court, date } = closeDayBody
 
-    const isFreeGame = await this.prisma.freeGame.findMany({
-      where: {
-        fk_court : fk_court,
-        date : date,
-        hour: hour
-      }
-    })
-
-    if (isFreeGame.length != 0) {
-      throw new Error("O horário desse dia já está aberto")
-    }
-
-    const freeGame = await this.prisma.freeGame.create({
-      data: {
-        id : randomUUID(),
-        date: date,
-        hour : hour,
-        court : {connect : {id: fk_court}},
-      }
-    })
-
-    return freeGame
-  }
-
-  async closeDay(closeDayBody : CloseDayBody) {
-    const {fk_court, date} = closeDayBody
-
-    const nomeDiaSemana = await this.getWekendDay(date)
+    const nomeDiaSemana = await this.courtUtilits.getWekendDay(date)
 
     const operatingDay = await this.prisma.operatingDay.findMany({
       where: {
@@ -301,63 +378,150 @@ export class CourtService {
     const response = []
 
     for (const time of operatingDay[0].Times) {
-      const haveReservation = await this.prisma.reservation.findMany({
-        where: {
-          fk_court : fk_court,
-          hour : time.hour,
-          date : date
-        }
-      })
+      const haveReservation = await this.courtUtilits.reservationFindMany(fk_court, date, time.hour, "Agendado")
 
       if (haveReservation.length == 0) {
-        const haveClosure = await this.closureFindMany(time.hour, fk_court, date)
+        const haveClosure = await this.courtUtilits.closureFindMany(time.hour, fk_court, date)
 
         if (haveClosure.length == 0) {
           const closure = await this.prisma.closure.create({
             data: {
-              id : randomUUID(),
+              id: randomUUID(),
               date: date,
-              hour : time.hour,
-              court : {connect : {id: fk_court}},
+              hour: time.hour,
+              court: { connect: { id: fk_court } },
             }
           })
 
           response.push(closure)
         }
-        else{
-          response.push('O horário '+time.hour+' já está fechado')
+        else {
+          response.push('O horário ' + time.hour + ' já está fechado')
         }
       }
       else {
-        response.push('O horário '+time.hour+' está reservado, trate com o cliente sobre isso')
+        response.push('O horário ' + time.hour + ' está reservado, trate com o cliente sobre isso')
       }
     }
 
     return response
   }
 
-  async getUserReservations(client) {
-    const reservation = await this.prisma.reservation.findMany({
-      where : {
-        fk_user : client.id
+  // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  // Ofertar Dias Livres
+  // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+  async releaseTime(releaseTimeBody: ReleaseTimebody) {
+    const { fk_court, date, hour } = releaseTimeBody
+
+    const haveFreeGame = await this.courtUtilits.freeGameFindMany(fk_court, date, hour)
+
+    if (haveFreeGame.length != 0) {
+      throw new Error("O horário desse dia já está aberto")
+    }
+
+    const freeGame = await this.prisma.freeGame.create({
+      data: {
+        id: randomUUID(),
+        date: date,
+        hour: hour,
+        court: { connect: { id: fk_court } },
       }
     })
 
-    return reservation
+    return freeGame
   }
 
-  async cancelReservation(cancelReservationBody : CancelReservationBody) {
-    const { idReservation } = cancelReservationBody
-    const cancelReservation = await this.prisma.reservation.update({
-      where: {
-        id: idReservation
-      },
-      data: {
-        status: "Cancelado"
+  async releaseDay(releaseDayBody: ReleaseDayBody) {
+    const { dates, fk_court } = releaseDayBody
+
+    const dataReturn = {
+      "reservationsCanceled": [],
+      "freeDaysCreateds": []
+    }
+
+    for (const date of dates) {
+      const haveReservation = await this.courtUtilits.reservationDayFindMany(date, fk_court, "Cancelado pela gerência")
+
+      if (haveReservation.length != 0) {
+        for (const reservation of haveReservation) {
+          const updatedReservation = await this.prisma.reservation.update({
+            where: {
+              id: reservation.id
+            },
+            data: {
+              status: "Cancelado pela gerência"
+            }
+          })
+          dataReturn.reservationsCanceled.push(updatedReservation)
+
+
+          // Envio de email
+
+          const user = await this.prisma.user.findUnique({
+            where: {
+              id: updatedReservation.fk_user
+            }
+          })
+          await this.mailService.sendUserConfirmation(user, "Reserva Cancelada", "./C_Reserve_Owner");
+        }
       }
-    });
 
-    return cancelReservation
+      const timesOfDay = await this.courtUtilits.getTimesOfDay(date, fk_court)
+
+      for (const hour of timesOfDay) {
+        const haveFreeDay = await this.courtUtilits.freeGameFindMany(date, fk_court, hour)
+
+        if (haveFreeDay.length == 0) {
+          const freeDay = await this.prisma.freeGame.create({
+            data: {
+              id: randomUUID(),
+              date: date,
+              hour: hour,
+              court: { connect: { id: fk_court } }
+            }
+          })
+
+          dataReturn.freeDaysCreateds.push(freeDay)
+        }
+      }
+    }
+
+    return dataReturn
   }
-}
+
+  // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  // Usuário Recorrente
+  // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+  async turnRecurrentUser(selectRecurrenceRangeBody: SelectRecurrenceRangeBody, user) {
+    const { fk_court, hour, day, range_days } = selectRecurrenceRangeBody
+
+    const operatingDay = await this.prisma.operatingDay.findFirst({
+      where: {
+        fk_court: fk_court,
+        day: day
+      }
+    })
+
+    const time = await this.prisma.time.findFirst({
+      where: {
+        fk_operating_day: operatingDay.id,
+        hour: hour
+      }
+    })
+
+    const recurrenceUser = await this.prisma.recurrenceUser.create({
+      data: {
+        id: randomUUID(),
+        range_days: range_days,
+        court: { connect: { id: fk_court } },
+        time: { connect: { id: time.id } },
+        day: { connect: { id: operatingDay.id } },
+        user: { connect: { id: user.id } }
+      }
+    })
+
+    return recurrenceUser
+  }
 }

@@ -7,3 +7,13 @@ export class Court {
     number: string;
     reference: string;
 }
+
+export class EditCourt {
+    idCourt?: string;
+    name?: string;
+    road?: string;
+    neighborhood?: string;
+    city?: string;
+    number?: string;
+    reference?: string;
+}

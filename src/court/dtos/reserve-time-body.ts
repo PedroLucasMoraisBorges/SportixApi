@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from "class-validator";
+import { IsArray, IsNotEmpty, IsString } from "class-validator";
 import { ReserveTime } from "../entities/time.entity";
 
 export class ReserveTimeBody implements ReserveTime{
@@ -11,6 +11,6 @@ export class ReserveTimeBody implements ReserveTime{
     date: string;
 
     @IsNotEmpty()
-    @IsString()
-    hour: string;
+    @IsArray()
+    hours: string[];
 }

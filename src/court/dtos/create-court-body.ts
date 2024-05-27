@@ -1,5 +1,5 @@
-import {IsNotEmpty, Length, Matches} from 'class-validator'
-import { Court } from '../entities/court.entity';
+import {IsNotEmpty, IsOptional, Length, Matches} from 'class-validator'
+import { Court, EditCourt } from '../entities/court.entity';
 
 export class CreateCourtBody implements Court{
     @Length(10, 254)
@@ -38,4 +38,28 @@ export class CreateCourtBody implements Court{
 
     @Length(5, 254)
     reference : string;
+}
+
+
+export class EditCourtBody implements EditCourt {
+    @IsNotEmpty()
+    idCourt?: string;
+
+    @IsOptional()
+    name?: string;
+
+    @IsOptional()
+    road?: string;
+
+    @IsOptional()
+    neighborhood?: string;
+
+    @IsOptional()
+    city?: string;
+
+    @IsOptional()
+    number?: string;
+
+    @IsOptional()
+    reference?: string;
 }
