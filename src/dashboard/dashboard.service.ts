@@ -78,6 +78,48 @@ export class DashBoardService {
   
     return reservationsPerMonth;
   }
+
+  async getReservesPerDay(user) {
+    console.log(user);
+    const today = new Date();
+    const dayOfWeek = today.getDay();
   
+    // Início da semana (domingo)
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - dayOfWeek);
+  
+    const weekDates: { [key: string]: number } = {};
+    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  
+    for (let i = 0; i < 7; i++) {
+      const currentDate = new Date(startOfWeek);
+      currentDate.setDate(startOfWeek.getDate() + i);
+  
+      const formattedDate = `${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}-${currentDate.getFullYear()}`;
+  
+      const reserves = await this.prisma.reservation.findMany({
+        where: {
+          date: formattedDate,
+          status: "Agendado"
+        }
+      });
+  
+      let count = 0;
+      for (const reserve of reserves) {
+        const court = await this.prisma.court.findUnique({
+          where: {
+            id: reserve.fk_court
+          }
+        });
+  
+        if (court && court.fk_user === user.id) {
+          count++;
+        }
+      }
+      weekDates[dayNames[i]] = count;
+    }
+  
+    return weekDates;
+  }
   
 }
