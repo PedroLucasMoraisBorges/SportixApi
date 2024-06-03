@@ -23,4 +23,10 @@ export class DashBoardController {
   getReservesPerDay(@Request() request : AuthRequest) {
     return this.dashBoardService.getReservesPerDay(request.user)
   }
+
+  @Get('reservesCanceledPerMonth/:year')
+  @HttpCode(HttpStatus.OK)
+  getCanceledReservesPerMonth(@Request() request : AuthRequest) {
+    return this.dashBoardService.get_C_ReservesPerMonth(request.user, request.params.year)
+  }
 }

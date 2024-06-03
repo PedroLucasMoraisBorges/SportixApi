@@ -8,8 +8,32 @@ export class DashBoardService {
     private readonly prisma: PrismaService,
   ) { }
 
-  async getReservesOfDay(user, date: string): Promise<number> {
-    const courts = await this.prisma.court.findMany({
+  private getMonthNames() {
+    return [
+      "january", "february", "march", "april", "may", "june",
+      "july", "august", "september", "october", "november", "december"
+    ];
+  }
+
+  private async getMonths() {
+    return {
+      january: 0,
+      february: 0,
+      march: 0,
+      april: 0,
+      may: 0,
+      june: 0,
+      july: 0,
+      august: 0,
+      september: 0,
+      october: 0,
+      november: 0,
+      december: 0
+    };
+  }
+
+  private async getUserCourts(user) {
+    return await this.prisma.court.findMany({
       where: {
         fk_user: user.id,
       },
@@ -17,6 +41,10 @@ export class DashBoardService {
         Reservation: true,
       },
     });
+  }
+
+  async getReservesOfDay(user, date: string): Promise<number> {
+    const courts = await this.getUserCourts(user)
   
     let totalReservations = 0;
   
@@ -31,37 +59,10 @@ export class DashBoardService {
     return totalReservations;
   }
 
-  async getReservesPerMonth(user, year: string): Promise<{ [key: string]: number }> {
-    const courts = await this.prisma.court.findMany({
-      where: {
-        fk_user: user.id,
-      },
-      include: {
-        Reservation: true,
-      },
-    });
-  
-    // Objeto para armazenar o total de reservas por mês
-    const reservationsPerMonth = {
-      january: 0,
-      february: 0,
-      march: 0,
-      april: 0,
-      may: 0,
-      june: 0,
-      july: 0,
-      august: 0,
-      september: 0,
-      october: 0,
-      november: 0,
-      december: 0
-    };
-  
-    // Mapeamento de índice do mês para o nome do mês
-    const monthNames = [
-      "january", "february", "march", "april", "may", "june",
-      "july", "august", "september", "october", "november", "december"
-    ];
+  async getReservesPerMonth(user, year: string) {
+    const courts = await this.getUserCourts(user)
+    const reservationsPerMonth = await this.getMonths()
+    const monthNames = this.getMonthNames()
   
     for (const court of courts) {
       for (const reservation of court.Reservation) {
@@ -80,7 +81,6 @@ export class DashBoardService {
   }
 
   async getReservesPerDay(user) {
-    console.log(user);
     const today = new Date();
     const dayOfWeek = today.getDay();
   
@@ -122,4 +122,24 @@ export class DashBoardService {
     return weekDates;
   }
   
+  async get_C_ReservesPerMonth(user, year: string): Promise<{ [key: string]: number }> {
+    const courts = await this.getUserCourts(user)
+    const  monthsOfYear = await this.getMonths()
+    const monthNames = await this.getMonthNames()
+  
+    for (const court of courts) {
+      for (const reservation of court.Reservation) {
+        const reservationDate = new Date(reservation.date);
+        const reservationYear = reservationDate.getFullYear();
+  
+        if (reservationYear === Number(year) && reservation.status === "Cancelado") {
+          const monthIndex = reservationDate.getMonth(); // Obtém o mês (0 - Janeiro, 11 - Dezembro)
+          const monthName = monthNames[monthIndex];
+          monthsOfYear[monthName]++;
+        }
+      }
+    }
+  
+    return monthsOfYear;
+  }
 }
