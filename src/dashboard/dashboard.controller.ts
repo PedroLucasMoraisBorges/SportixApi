@@ -6,10 +6,16 @@ import { AuthRequest } from 'src/auth/models/AuthRequest';
 export class DashBoardController {
   constructor(private readonly dashBoardService: DashBoardService) { }
 
-  @Get('reservesOfDay/:date')
+  @Get('reservesOfDay/')
   @HttpCode(HttpStatus.OK)
   getReservesOfDay(@Request() request : AuthRequest) {
-    return this.dashBoardService.getReservesOfDay(request.user, request.params.date)
+    return this.dashBoardService.getReservesOfDay(request.user)
+  }
+
+  @Get('reservesOfMonth/')
+  @HttpCode(HttpStatus.OK)
+  getReservesOfMonth(@Request() request : AuthRequest) {
+    return this.dashBoardService.getReservesOfMonth(request.user)
   }
 
   @Get('reservesPerMonth/:year')

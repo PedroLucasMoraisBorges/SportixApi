@@ -43,21 +43,120 @@ export class DashBoardService {
     });
   }
 
-  async getReservesOfDay(user, date: string): Promise<number> {
+  async getReservesOfDay(user){
+    const today = new Date();
+    const formattedDate = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}-${today.getFullYear()}`;
+
+    const lastDay = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()-1).padStart(2, '0')}-${today.getFullYear()}`;
+
+
+    const completeData = {
+      'ammount' : 0,
+      'comparative' : 0,
+      'situation' : '',
+      'percentageColorClass': ''
+    }
+
     const courts = await this.getUserCourts(user)
   
-    let totalReservations = 0;
+    let totalReservationsToday = 0;
+    let totalReservationsYesterday = 0
   
     for (const court of courts) {
       for (const reservation of court.Reservation) {
-        if (reservation.date === date && reservation.status === "Agendado") {
-          totalReservations++;
+        if (reservation.date === formattedDate && reservation.status === "Agendado") {
+          totalReservationsToday++;
+        }
+        if (reservation.date === lastDay && reservation.status === "Agendado"){
+          totalReservationsYesterday++;
         }
       }
     }
-  
-    return totalReservations;
+
+    completeData.ammount = totalReservationsToday;
+
+    if (totalReservationsYesterday > 0) {
+      const percentageChange = ((totalReservationsToday - totalReservationsYesterday) / totalReservationsYesterday) * 100;
+      completeData.comparative = Math.round(percentageChange * 10) / 10; // Arredonda para uma casa decimal
+
+      if (percentageChange > 0) {
+        completeData.situation = 'maior';
+        completeData.percentageColorClass = 'text-emerald-500 dark:text-emerald-400'
+      } else if (percentageChange < 0) {
+        completeData.percentageColorClass = 'text-rose-500'
+        completeData.situation = 'menor';
+      } else {
+        completeData.situation = 'igual';
+      }
+    } else {
+      completeData.comparative = 0;
+      completeData.situation = 'sem comparação';
+    }
+
+    return completeData;
   }
+
+  async getReservesOfMonth(user) {
+    const today = new Date();
+    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+
+    // Ajuste para o mês anterior
+    if (lastMonth.getMonth() === 11) {
+      // Se o mês for dezembro, ajuste para o ano anterior
+      lastMonth.setFullYear(today.getFullYear() - 1);
+    }
+
+
+    const completeData = {
+      'ammount' : 0,
+      'comparative' : 0,
+      'situation' : '',
+      'percentageColorClass': ''
+    }
+
+    const courts = await this.getUserCourts(user)
+  
+    let totalReservationsToday = 0;
+    let totalReservationsLastMonth = 0
+  
+    for (const court of courts) {
+      for (const reservation of court.Reservation) {
+        const dateString = reservation.date;
+        const [month, day, year] = dateString.split('-').map(Number);
+        const dateReservation = new Date(year, month - 1, day);
+
+        if (dateReservation.getMonth() === today.getMonth() && reservation.status === "Agendado") {
+          totalReservationsToday++;
+        }
+        if (dateReservation.getMonth() === lastMonth.getMonth() && reservation.status === "Agendado"){
+          totalReservationsLastMonth++;
+        }
+      }
+    }
+
+    completeData.ammount = totalReservationsToday;
+
+    if (totalReservationsLastMonth > 0) {
+      const percentageChange = ((totalReservationsToday - totalReservationsLastMonth) / totalReservationsLastMonth) * 100;
+      completeData.comparative = Math.round(percentageChange * 10) / 10; // Arredonda para uma casa decimal
+
+      if (percentageChange > 0) {
+        completeData.situation = 'maior';
+        completeData.percentageColorClass = 'text-emerald-500 dark:text-emerald-400'
+      } else if (percentageChange < 0) {
+        completeData.percentageColorClass = 'text-rose-500'
+        completeData.situation = 'menor';
+      } else {
+        completeData.situation = 'igual';
+      }
+    } else {
+      completeData.comparative = 0;
+      completeData.situation = 'sem comparação';
+    }
+
+    return completeData;
+  }
+
 
   async getReservesPerMonth(user, year: string) {
     const courts = await this.getUserCourts(user)
