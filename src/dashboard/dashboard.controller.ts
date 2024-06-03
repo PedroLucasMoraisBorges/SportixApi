@@ -11,4 +11,10 @@ export class DashBoardController {
   getReservesOfDay(@Request() request : AuthRequest) {
     return this.dashBoardService.getReservesOfDay(request.user, request.params.date)
   }
+
+  @Get('reservesPerMonth/:year')
+  @HttpCode(HttpStatus.OK)
+  getReservesPerMonth(@Request() request : AuthRequest) {
+    return this.dashBoardService.getReservesPerMonth(request.user, request.params.year)
+  }
 }
