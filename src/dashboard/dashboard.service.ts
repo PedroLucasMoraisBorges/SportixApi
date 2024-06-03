@@ -8,41 +8,15 @@ export class DashBoardService {
     private readonly prisma: PrismaService,
   ) { }
 
-  async getReservesOfDay(user, date: string): Promise<number> {
-    const courts = await this.prisma.court.findMany({
-      where: {
-        fk_user: user.id,
-      },
-      include: {
-        Reservation: true,
-      },
-    });
-  
-    let totalReservations = 0;
-  
-    for (const court of courts) {
-      for (const reservation of court.Reservation) {
-        if (reservation.date === date && reservation.status === "Agendado") {
-          totalReservations++;
-        }
-      }
-    }
-  
-    return totalReservations;
+  private getMonthNames() {
+    return [
+      "january", "february", "march", "april", "may", "june",
+      "july", "august", "september", "october", "november", "december"
+    ];
   }
 
-  async getReservesPerMonth(user, year: string): Promise<{ [key: string]: number }> {
-    const courts = await this.prisma.court.findMany({
-      where: {
-        fk_user: user.id,
-      },
-      include: {
-        Reservation: true,
-      },
-    });
-  
-    // Objeto para armazenar o total de reservas por mês
-    const reservationsPerMonth = {
+  private async getMonths() {
+    return {
       january: 0,
       february: 0,
       march: 0,
@@ -56,12 +30,138 @@ export class DashBoardService {
       november: 0,
       december: 0
     };
+  }
+
+  private async getUserCourts(user) {
+    return await this.prisma.court.findMany({
+      where: {
+        fk_user: user.id,
+      },
+      include: {
+        Reservation: true,
+      },
+    });
+  }
+
+  async getReservesOfDay(user){
+    const today = new Date();
+    const formattedDate = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}-${today.getFullYear()}`;
+
+    const lastDay = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()-1).padStart(2, '0')}-${today.getFullYear()}`;
+
+
+    const completeData = {
+      'ammount' : 0,
+      'comparative' : 0,
+      'situation' : '',
+      'percentageColorClass': ''
+    }
+
+    const courts = await this.getUserCourts(user)
   
-    // Mapeamento de índice do mês para o nome do mês
-    const monthNames = [
-      "january", "february", "march", "april", "may", "june",
-      "july", "august", "september", "october", "november", "december"
-    ];
+    let totalReservationsToday = 0;
+    let totalReservationsYesterday = 0
+  
+    for (const court of courts) {
+      for (const reservation of court.Reservation) {
+        if (reservation.date === formattedDate && reservation.status === "Agendado") {
+          totalReservationsToday++;
+        }
+        if (reservation.date === lastDay && reservation.status === "Agendado"){
+          totalReservationsYesterday++;
+        }
+      }
+    }
+
+    completeData.ammount = totalReservationsToday;
+
+    if (totalReservationsYesterday > 0) {
+      const percentageChange = ((totalReservationsToday - totalReservationsYesterday) / totalReservationsYesterday) * 100;
+      completeData.comparative = Math.round(percentageChange * 10) / 10; // Arredonda para uma casa decimal
+
+      if (percentageChange > 0) {
+        completeData.situation = 'maior';
+        completeData.percentageColorClass = 'text-emerald-500 dark:text-emerald-400'
+      } else if (percentageChange < 0) {
+        completeData.percentageColorClass = 'text-rose-500'
+        completeData.situation = 'menor';
+      } else {
+        completeData.situation = 'igual';
+      }
+    } else {
+      completeData.comparative = 0;
+      completeData.situation = 'sem comparação';
+    }
+
+    return completeData;
+  }
+
+  async getReservesOfMonth(user) {
+    const today = new Date();
+    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+
+    // Ajuste para o mês anterior
+    if (lastMonth.getMonth() === 11) {
+      // Se o mês for dezembro, ajuste para o ano anterior
+      lastMonth.setFullYear(today.getFullYear() - 1);
+    }
+
+
+    const completeData = {
+      'ammount' : 0,
+      'comparative' : 0,
+      'situation' : '',
+      'percentageColorClass': ''
+    }
+
+    const courts = await this.getUserCourts(user)
+  
+    let totalReservationsToday = 0;
+    let totalReservationsLastMonth = 0
+  
+    for (const court of courts) {
+      for (const reservation of court.Reservation) {
+        const dateString = reservation.date;
+        const [month, day, year] = dateString.split('-').map(Number);
+        const dateReservation = new Date(year, month - 1, day);
+
+        if (dateReservation.getMonth() === today.getMonth() && reservation.status === "Agendado") {
+          totalReservationsToday++;
+        }
+        if (dateReservation.getMonth() === lastMonth.getMonth() && reservation.status === "Agendado"){
+          totalReservationsLastMonth++;
+        }
+      }
+    }
+
+    completeData.ammount = totalReservationsToday;
+
+    if (totalReservationsLastMonth > 0) {
+      const percentageChange = ((totalReservationsToday - totalReservationsLastMonth) / totalReservationsLastMonth) * 100;
+      completeData.comparative = Math.round(percentageChange * 10) / 10; // Arredonda para uma casa decimal
+
+      if (percentageChange > 0) {
+        completeData.situation = 'maior';
+        completeData.percentageColorClass = 'text-emerald-500 dark:text-emerald-400'
+      } else if (percentageChange < 0) {
+        completeData.percentageColorClass = 'text-rose-500'
+        completeData.situation = 'menor';
+      } else {
+        completeData.situation = 'igual';
+      }
+    } else {
+      completeData.comparative = 0;
+      completeData.situation = 'sem comparação';
+    }
+
+    return completeData;
+  }
+
+
+  async getReservesPerMonth(user, year: string) {
+    const courts = await this.getUserCourts(user)
+    const reservationsPerMonth = await this.getMonths()
+    const monthNames = this.getMonthNames()
   
     for (const court of courts) {
       for (const reservation of court.Reservation) {
@@ -80,7 +180,6 @@ export class DashBoardService {
   }
 
   async getReservesPerDay(user) {
-    console.log(user);
     const today = new Date();
     const dayOfWeek = today.getDay();
   
@@ -122,4 +221,24 @@ export class DashBoardService {
     return weekDates;
   }
   
+  async get_C_ReservesPerMonth(user, year: string): Promise<{ [key: string]: number }> {
+    const courts = await this.getUserCourts(user)
+    const  monthsOfYear = await this.getMonths()
+    const monthNames = await this.getMonthNames()
+  
+    for (const court of courts) {
+      for (const reservation of court.Reservation) {
+        const reservationDate = new Date(reservation.date);
+        const reservationYear = reservationDate.getFullYear();
+  
+        if (reservationYear === Number(year) && reservation.status === "Cancelado") {
+          const monthIndex = reservationDate.getMonth(); // Obtém o mês (0 - Janeiro, 11 - Dezembro)
+          const monthName = monthNames[monthIndex];
+          monthsOfYear[monthName]++;
+        }
+      }
+    }
+  
+    return monthsOfYear;
+  }
 }
