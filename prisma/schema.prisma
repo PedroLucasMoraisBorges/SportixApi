@@ -30,6 +30,7 @@ model User {
 model Court {
   id             String           @id
   name           String
+  value           Decimal          @default(0)
   road           String
   city           String
   number         String

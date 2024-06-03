@@ -158,6 +158,68 @@ export class DashBoardService {
   }
 
 
+  async getTotalRevenueOfMonth(user) {
+    const today = new Date();
+    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+
+    // Ajuste para o mês anterior
+    if (lastMonth.getMonth() === 11) {
+      // Se o mês for dezembro, ajuste para o ano anterior
+      lastMonth.setFullYear(today.getFullYear() - 1);
+    }
+
+
+    const completeData = {
+      'ammount' : 0,
+      'comparative' : 0,
+      'situation' : '',
+      'percentageColorClass': ''
+    }
+
+    const courts = await this.getUserCourts(user)
+  
+    let totalRevenueToday = 0;
+    let totalRevenueLastMonth = 0
+  
+    for (const court of courts) {
+      for (const reservation of court.Reservation) {
+        const dateString = reservation.date;
+        const [month, day, year] = dateString.split('-').map(Number);
+        const dateReservation = new Date(year, month - 1, day);
+
+        if (dateReservation.getMonth() === today.getMonth() && reservation.status === "Agendado") {
+          totalRevenueToday += Number(court.value);
+        }
+        if (dateReservation.getMonth() === lastMonth.getMonth() && reservation.status === "Agendado"){
+          totalRevenueLastMonth += Number(court.value);
+        }
+      }
+    }
+
+    completeData.ammount = totalRevenueToday;
+
+    if (totalRevenueLastMonth > 0) {
+      const percentageChange = ((totalRevenueToday - totalRevenueLastMonth) / totalRevenueLastMonth) * 100;
+      completeData.comparative = Math.round(percentageChange * 10) / 10; // Arredonda para uma casa decimal
+
+      if (percentageChange > 0) {
+        completeData.situation = 'maior';
+        completeData.percentageColorClass = 'text-emerald-500 dark:text-emerald-400'
+      } else if (percentageChange < 0) {
+        completeData.percentageColorClass = 'text-rose-500'
+        completeData.situation = 'menor';
+      } else {
+        completeData.situation = 'igual';
+      }
+    } else {
+      completeData.comparative = 0;
+      completeData.situation = 'sem comparação';
+    }
+
+    return completeData;
+  }
+
+
   async getReservesPerMonth(user, year: string) {
     const courts = await this.getUserCourts(user)
     const reservationsPerMonth = await this.getMonths()
