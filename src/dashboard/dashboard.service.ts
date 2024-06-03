@@ -45,9 +45,9 @@ export class DashBoardService {
 
   async getReservesOfDay(user) {
     const today = new Date();
-    const formattedDate = ${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}-${today.getFullYear()};
+    const formattedDate = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}-${today.getFullYear()}`;
 
-    const lastDay = ${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate() - 1).padStart(2, '0')}-${today.getFullYear()};
+    const lastDay = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate() - 1).padStart(2, '0')}-${today.getFullYear()};`
 
 
     const completeData = {
@@ -188,10 +188,10 @@ export class DashBoardService {
         const dateReservation = new Date(year, month - 1, day);
 
         if (dateReservation.getMonth() === today.getMonth() && reservation.status === "Cancelado") {
-          totalCanceledsToday ++
+          totalCanceledsToday++
         }
         if (dateReservation.getMonth() === lastMonth.getMonth() && reservation.status === "Cancelado") {
-          totalCanceledsLastMonth ++
+          totalCanceledsLastMonth++
         }
       }
     }
@@ -282,86 +282,86 @@ export class DashBoardService {
 
 
   async getReservesPerMonth(user, year: string) {
-  const courts = await this.getUserCourts(user)
-  const reservationsPerMonth = await this.getMonths()
-  const monthNames = this.getMonthNames()
+    const courts = await this.getUserCourts(user)
+    const reservationsPerMonth = await this.getMonths()
+    const monthNames = this.getMonthNames()
 
-  for (const court of courts) {
-    for (const reservation of court.Reservation) {
-      const reservationDate = new Date(reservation.date);
-      const reservationYear = reservationDate.getFullYear();
+    for (const court of courts) {
+      for (const reservation of court.Reservation) {
+        const reservationDate = new Date(reservation.date);
+        const reservationYear = reservationDate.getFullYear();
 
-      if (reservationYear === Number(year) && reservation.status === "Agendado") {
-        const monthIndex = reservationDate.getMonth(); // Obtém o mês (0 - Janeiro, 11 - Dezembro)
-        const monthName = monthNames[monthIndex];
-        reservationsPerMonth[monthName]++;
+        if (reservationYear === Number(year) && reservation.status === "Agendado") {
+          const monthIndex = reservationDate.getMonth(); // Obtém o mês (0 - Janeiro, 11 - Dezembro)
+          const monthName = monthNames[monthIndex];
+          reservationsPerMonth[monthName]++;
+        }
       }
     }
+
+    return reservationsPerMonth;
   }
 
-  return reservationsPerMonth;
-}
+  async getRevenuePerDay(user) {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
 
-  async getReservesPerDay(user) {
-  const today = new Date();
-  const dayOfWeek = today.getDay();
+    // Início da semana (domingo)
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - dayOfWeek);
 
-  // Início da semana (domingo)
-  const startOfWeek = new Date(today);
-  startOfWeek.setDate(today.getDate() - dayOfWeek);
+    const weekDates: { [key: string]: number } = {};
+    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-  const weekDates: { [key: string]: number } = {};
-  const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    for (let i = 0; i < 7; i++) {
+      const currentDate = new Date(startOfWeek);
+      currentDate.setDate(startOfWeek.getDate() + i);
 
-  for (let i = 0; i < 7; i++) {
-    const currentDate = new Date(startOfWeek);
-    currentDate.setDate(startOfWeek.getDate() + i);
+      const formattedDate = `${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}-${currentDate.getFullYear()}`;
 
-    const formattedDate = ${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}-${currentDate.getFullYear()};
-
-    const reserves = await this.prisma.reservation.findMany({
-      where: {
-        date: formattedDate,
-        status: "Agendado"
-      }
-    });
-
-    let count = 0;
-    for (const reserve of reserves) {
-      const court = await this.prisma.court.findUnique({
+      const reserves = await this.prisma.reservation.findMany({
         where: {
-          id: reserve.fk_court
+          date: formattedDate,
+          status: "Agendado"
         }
       });
 
-      if (court && court.fk_user === user.id) {
-        count++;
+      let count = 0;
+      for (const reserve of reserves) {
+        const court = await this.prisma.court.findUnique({
+          where: {
+            id: reserve.fk_court
+          }
+        });
+
+        if (court && court.fk_user === user.id) {
+          count += Number(court.value)
+        }
       }
+      weekDates[dayNames[i]] = count;
     }
-    weekDates[dayNames[i]] = count;
+
+    return weekDates;
   }
 
-  return weekDates;
-}
-  
-  async get_C_ReservesPerMonth(user, year: string): Promise < { [key: string]: number } > {
-  const courts = await this.getUserCourts(user)
-    const  monthsOfYear = await this.getMonths()
+  async get_C_ReservesPerMonth(user, year: string): Promise<{ [key: string]: number }> {
+    const courts = await this.getUserCourts(user)
+    const monthsOfYear = await this.getMonths()
     const monthNames = await this.getMonthNames()
-  
-    for(const court of courts) {
-    for (const reservation of court.Reservation) {
-      const reservationDate = new Date(reservation.date);
-      const reservationYear = reservationDate.getFullYear();
 
-      if (reservationYear === Number(year) && reservation.status === "Cancelado") {
-        const monthIndex = reservationDate.getMonth(); // Obtém o mês (0 - Janeiro, 11 - Dezembro)
-        const monthName = monthNames[monthIndex];
-        monthsOfYear[monthName]++;
+    for (const court of courts) {
+      for (const reservation of court.Reservation) {
+        const reservationDate = new Date(reservation.date);
+        const reservationYear = reservationDate.getFullYear();
+
+        if (reservationYear === Number(year) && reservation.status === "Cancelado") {
+          const monthIndex = reservationDate.getMonth(); // Obtém o mês (0 - Janeiro, 11 - Dezembro)
+          const monthName = monthNames[monthIndex];
+          monthsOfYear[monthName]++;
+        }
       }
     }
-  }
-  
+
     return monthsOfYear;
-}
+  }
 }
