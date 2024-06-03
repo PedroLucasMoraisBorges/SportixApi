@@ -18,6 +18,12 @@ export class DashBoardController {
     return this.dashBoardService.getReservesOfMonth(request.user)
   }
 
+  @Get('revenueOfMonth/')
+  @HttpCode(HttpStatus.OK)
+  getTotalRevenueOfMonth(@Request() request : AuthRequest) {
+    return this.dashBoardService.getTotalRevenueOfMonth(request.user)
+  }
+
   @Get('reservesPerMonth/:year')
   @HttpCode(HttpStatus.OK)
   getReservesPerMonth(@Request() request : AuthRequest) {
