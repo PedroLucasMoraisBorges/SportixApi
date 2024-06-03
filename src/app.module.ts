@@ -12,9 +12,10 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { CourtModule } from './court/court.module';
 import { MailModule } from './mail/mail.module';
 import { MyMailerService } from './mail/mail.service';
+import { DashBoardModule } from './dashboard/dashboard.module';
 
 @Module({
-  imports: [JwtModule, UserModule, PrismaModule, AuthModule, CourtModule, MailModule],
+  imports: [JwtModule, UserModule, PrismaModule, AuthModule, CourtModule, MailModule, DashBoardModule],
   controllers: [AppController, UserController, AuthController],
   providers: [
     {

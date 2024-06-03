@@ -4,6 +4,7 @@ import { PrismaService } from '../database/prisma.service';
 import { UserLogin } from 'src/user/entities/user.entity';
 import { CourtUtilits } from './utilits/court.utilits';
 import { MyMailerService } from 'src/mail/mail.service';
+import { Decimal } from '@prisma/client/runtime/library';
 
 // Mock do MailerService
 const mockMailerService = {
@@ -18,7 +19,8 @@ const ExpectedCourt = {
   city: 'Mock City',
   number: '123',
   reference: 'Mock Reference',
-  fk_user: 'mockUserId'
+  fk_user: 'mockUserId',
+  value: new Decimal(0)
 };
 
 describe('CourtService', () => {
@@ -101,6 +103,7 @@ describe('CourtService', () => {
       jest.spyOn(prismaService.court, 'create').mockResolvedValue({
         ...mockCourt,
         fk_user: 'mockUserId',
+        value: new Decimal(0)
       });
 
       const result = await service.create(mockCourt, mockUser);
@@ -135,6 +138,7 @@ describe('CourtService', () => {
         name: 'Mock User',
         cpf: '12345678900',
         phoneNumber: "88997974132",
+        isOwner: false,
         court: []
       };
       const mockCourts = [
@@ -147,6 +151,7 @@ describe('CourtService', () => {
           reference: 'Reference 1',
           neighborhood: 'Neighborhood 1',
           fk_user: 'mockUserId',
+          value: new Decimal(0)
         },
         {
           id: 'court2',
@@ -157,6 +162,7 @@ describe('CourtService', () => {
           reference: 'Reference 2',
           neighborhood: 'Neighborhood 2',
           fk_user: 'mockUserId',
+          value: new Decimal(0)
         },
       ];
 
@@ -179,6 +185,7 @@ describe('CourtService', () => {
         name: 'Mock User',
         cpf: '12345678900',
         phoneNumber: "88997974132",
+        isOwner: false,
         court: []
       };
 

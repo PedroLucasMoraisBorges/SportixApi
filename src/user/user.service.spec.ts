@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from 'src/database/prisma.service';
 import { UserService } from './user.service';
 import { CreateUserBody } from './dtos/create-user-body';
-import * as bcrypt from 'bcrypt'
+import * as bcrypt from 'bcrypt';
 
 describe('UserService', () => {
   let service: UserService;
@@ -47,26 +47,24 @@ describe('UserService', () => {
         password2: 'P3dro456@',
       };
 
-      // Mocka a função findUnique para retornar null, indicando que o e-mail não está em uso
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(null);
 
-      // Simula a geração de um hash de senha
       jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashedPassword');
 
-      // Simula a criação de um usuário
       jest.spyOn(prismaService.user, 'create').mockResolvedValue({
         id: 'someId',
         ...user,
         password: 'hashedPassword',
+        isOwner: false,
       });
 
       const result = await service.create(user);
-
 
       expect(result).toEqual({
         id: 'someId',
         ...user,
         password: 'hashedPassword',
+        isOwner: false, // Adiciona a propriedade isOwner
       });
     });
 
@@ -95,7 +93,8 @@ describe('UserService', () => {
         cpf: '08412345637',
         email: 'teste1@gmail.com',
         phoneNumber: '88997974194',
-        password: 'hashedPassword', // Adiciona a propriedade password
+        password: 'hashedPassword',
+        isOwner: false, 
       };
 
       // Mocka a função findUnique para retornar o usuário encontrado

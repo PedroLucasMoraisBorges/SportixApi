@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Request } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Post, Put, Request } from '@nestjs/common';
 import { CourtService } from './court.service';
 import { CreateCourtBody, EditCourtBody } from 'src/court/dtos/create-court-body';
 import { AuthRequest } from 'src/auth/models/AuthRequest';
@@ -8,42 +8,17 @@ import { ReserveTimeBody } from './dtos/reserve-time-body';
 import { CancelReservationBody, CloseDayBody, CloseTimeBody } from './dtos/close-body';
 import { SelectRecurrenceRangeBody } from './dtos/recurrence-user-body';
 import { ReleaseDayBody, ReleaseTimebody } from './dtos/release-time-body';
+import { DeleteCourtBody } from './dtos/delete-court.dto';
 
 @Controller('court')
 export class CourtController {
   constructor(private readonly courtService: CourtService) { }
 
+  // Admin
   @Post('create')
   @HttpCode(HttpStatus.OK)
   create(@Body() createCourtDto: CreateCourtBody, @Request() request: AuthRequest) {
     return this.courtService.create(createCourtDto, request.user);
-  }
-
-  @Post('edit')
-  @HttpCode(HttpStatus.OK)
-  editCourt(@Body() editCourtBody : EditCourtBody) {
-    return this.courtService.editCourt(editCourtBody)
-  }
-
-  @Get('getUserCourts')
-  @HttpCode(HttpStatus.OK)
-  getUserCourts(@Request() request: AuthRequest) {
-    if (request.user.court.length != 0) {
-      return this.courtService.getUserCourts(request.user)
-    }
-  }
-
-  @IsPublic()
-  @Get('getCourtInfo/:id/:date')
-  @HttpCode(HttpStatus.OK)
-  getCourtInfo(@Request() request: AuthRequest) {
-    return this.courtService.getCourtInfo(request.params.id, request.params.date)
-  }
-
-  @Get('getUserCourtInfo/:id/:date')
-  @HttpCode(HttpStatus.OK)
-  getUserCourtInfo(@Request() request: AuthRequest) {
-    return this.courtService.getUserCourtInfo(request.params.id, request.params.date)
   }
 
   @Post('createOperatingDays')
@@ -54,23 +29,32 @@ export class CourtController {
     }
   }
 
-  @Post('reserveTime')
+  @Put('edit')
   @HttpCode(HttpStatus.OK)
-  reserveTime(@Body() reserveTimeBody: ReserveTimeBody, @Request() request: AuthRequest) {
-    return this.courtService.reserveTime(reserveTimeBody, request.user)
+  editCourt(@Body() editCourtBody : EditCourtBody) {
+    return this.courtService.editCourt(editCourtBody)
   }
 
-  @IsPublic()
-  @Get('getCourts/:id')
+  @Delete('delete')
   @HttpCode(HttpStatus.OK)
-  getCourts(@Request() request: AuthRequest) {
-    return this.courtService.getCourts(request.params.id)
+  deleteCourt(@Body() deleteCourtBody : DeleteCourtBody, @Request() request : AuthRequest) {
+    if (request.user.court.length > 0) {
+      return this.courtService.deleteCourt(deleteCourtBody, request.user)
+    }
   }
 
-  @Get('getReservedTimes')
+  @Get('getUserCourts')
   @HttpCode(HttpStatus.OK)
-  getReservedTimes(@Request() request: AuthRequest) {
-    return this.courtService.getReservedTimes(request.user)
+  getUserCourts(@Request() request: AuthRequest) {
+    if (request.user.court.length != 0) {
+      return this.courtService.getUserCourts(request.user)
+    }
+  }
+
+  @Get('getUserCourtInfo/:id/:date')
+  @HttpCode(HttpStatus.OK)
+  getUserCourtInfo(@Request() request: AuthRequest) {
+    return this.courtService.getUserCourtInfo(request.params.id, request.params.date)
   }
 
   @IsPublic()
@@ -99,6 +83,34 @@ export class CourtController {
   @HttpCode(HttpStatus.OK)
   closeDay(@Body() closeDayBody: CloseDayBody) {
     return this.courtService.closeDay(closeDayBody)
+  }
+
+  // User
+
+  @IsPublic()
+  @Get('getCourtInfo/:id/:date')
+  @HttpCode(HttpStatus.OK)
+  getCourtInfo(@Request() request: AuthRequest) {
+    return this.courtService.getCourtInfo(request.params.id, request.params.date)
+  }
+
+  @Post('reserveTime')
+  @HttpCode(HttpStatus.OK)
+  reserveTime(@Body() reserveTimeBody: ReserveTimeBody, @Request() request: AuthRequest) {
+    return this.courtService.reserveTime(reserveTimeBody, request.user)
+  }
+
+  @IsPublic()
+  @Get('getCourts/:id')
+  @HttpCode(HttpStatus.OK)
+  getCourts(@Request() request: AuthRequest) {
+    return this.courtService.getCourts(request.params.id)
+  }
+
+  @Get('getReservedTimes')
+  @HttpCode(HttpStatus.OK)
+  getReservedTimes(@Request() request: AuthRequest) {
+    return this.courtService.getReservedTimes(request.user)
   }
 
   @Get('getUserReservations')

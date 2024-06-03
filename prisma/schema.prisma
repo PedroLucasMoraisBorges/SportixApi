@@ -20,6 +20,7 @@ model User {
   phoneNumber    String           @unique
   email          String           @unique
   password       String
+  isOwner        Boolean          @default(false)
   Times          Time[]
   Court          Court[]
   Reservation    Reservation[]
@@ -29,6 +30,7 @@ model User {
 model Court {
   id             String           @id
   name           String
+  value           Decimal          @default(0)
   road           String
   city           String
   number         String

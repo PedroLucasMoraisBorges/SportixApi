@@ -12,6 +12,8 @@ import { CourtUtilits } from './utilits/court.utilits';
 import { ReleaseDayBody, ReleaseTimebody } from './dtos/release-time-body';
 import { MyMailerService } from 'src/mail/mail.service';
 import { EditCourt } from './entities/court.entity';
+import { DeleteCourtBody } from './dtos/delete-court.dto';
+import { reservationObject } from './entities/reservationObject.entity';
 
 @Injectable()
 export class CourtService {
@@ -118,6 +120,24 @@ export class CourtService {
     });
 
     return court;
+  }
+
+  async deleteCourt(deleteCourtBody : DeleteCourtBody, user : UserLogin) {
+    const {id_court} = deleteCourtBody
+
+    try {
+      const court = await this.prisma.court.delete({
+        where: {
+          id: id_court,
+          fk_user: user.id
+        }
+      })
+
+      return court
+    }
+    catch(error) {
+      throw new Error("Quadra não encontrada")
+    }
   }
 
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -306,6 +326,26 @@ export class CourtService {
           client: { connect: { id: client.id } }
         }
       })
+
+      const court = await this.prisma.court.findUnique({
+        where: {
+          id: fk_court
+        }
+      })
+
+      const reservationObject : reservationObject = {
+        court: court.name,
+        date: reservation.date,
+        hour: reservation.hour,
+        client: client.name
+      }
+
+      const owner = await this.prisma.user.findUnique({
+        where: {
+          id: court.fk_user
+        }
+      })
+      await this.mailService.sendReservationAlert(owner.email, "Reserva de horário", "./reserve_alert", reservationObject)
 
       returnReservation.push(reservation)
     }
