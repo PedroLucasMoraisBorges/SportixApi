@@ -18,14 +18,22 @@ export class CourtController {
   @Post('create')
   @HttpCode(HttpStatus.OK)
   create(@Body() createCourtDto: CreateCourtBody, @Request() request: AuthRequest) {
-    return this.courtService.create(createCourtDto, request.user);
+    if (request.user.isOwner) {
+      return this.courtService.create(createCourtDto, request.user);
+    }
+    else{
+      throw new Error('Acesso restrito a assinantes')
+    }
   }
 
   @Post('createOperatingDays')
   @HttpCode(HttpStatus.OK)
   createOperatingDays(@Body() createOperatingDayBody: CreateOperatingDayBody, @Request() request: AuthRequest) {
-    if (request.user.court.length != 0) {
+    if (request.user.isOwner) {
       return this.courtService.createOperatingDays(createOperatingDayBody)
+    }
+    else{
+      throw new Error('Acesso restrito a assinantes')
     }
   }
 
@@ -38,23 +46,45 @@ export class CourtController {
   @Delete('delete')
   @HttpCode(HttpStatus.OK)
   deleteCourt(@Body() deleteCourtBody : DeleteCourtBody, @Request() request : AuthRequest) {
-    if (request.user.court.length > 0) {
+    if (request.user.isOwner) {
       return this.courtService.deleteCourt(deleteCourtBody, request.user)
+    }
+    else{
+      throw new Error('Acesso restrito a assinantes')
     }
   }
 
   @Get('getUserCourts')
   @HttpCode(HttpStatus.OK)
   getUserCourts(@Request() request: AuthRequest) {
-    if (request.user.court.length != 0) {
+    if (request.user.isOwner == true) {
       return this.courtService.getUserCourts(request.user)
+    }
+    else{
+      throw new Error('Acesso restrito a assinantes')
+    }
+  }
+
+  @Put('cancelReservation/')
+  @HttpCode(HttpStatus.OK)
+  cancelReservation(@Request() request : AuthRequest, @Body() cancelReservationBody: CancelReservationBody) {
+    if (request.user.isOwner == true) {
+      return this.courtService.closeReservation(cancelReservationBody)
+    }
+    else{
+      throw new Error('Acesso restrito a assinantes')
     }
   }
 
   @Get('getUserCourtInfo/:id/:date')
   @HttpCode(HttpStatus.OK)
   getUserCourtInfo(@Request() request: AuthRequest) {
-    return this.courtService.getUserCourtInfo(request.params.id, request.params.date)
+    if (request.user.isOwner) {
+      return this.courtService.getUserCourtInfo(request.params.id, request.params.date)
+    }
+    else{
+      throw new Error('Acesso restrito a assinantes')
+    }
   }
 
   @IsPublic()
@@ -101,10 +131,10 @@ export class CourtController {
   }
 
   @IsPublic()
-  @Get('getCourts/:id')
+  @Get('getCourts/')
   @HttpCode(HttpStatus.OK)
-  getCourts(@Request() request: AuthRequest) {
-    return this.courtService.getCourts(request.params.id)
+  getCourts() {
+    return this.courtService.getCourts()
   }
 
   @Get('getReservedTimes')
@@ -117,12 +147,6 @@ export class CourtController {
   @HttpCode(HttpStatus.OK)
   getUserReservations(@Request() request: AuthRequest) {
     return this.courtService.getUserReservations(request.user)
-  }
-
-  @Post('cancelReservation')
-  @HttpCode(HttpStatus.OK)
-  cancelReservation(@Body() cancelReservationBody: CancelReservationBody) {
-    return this.courtService.cancelReservation(cancelReservationBody)
   }
 
   @Post('turnRecurrentUser')

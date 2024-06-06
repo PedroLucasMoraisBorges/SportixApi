@@ -58,7 +58,7 @@ export class UserService {
       name: user.name,
       cpf: user.cpf,
       phoneNumber: user.phoneNumber,
-      court: user.court
+      isOwner: user.isOwner
     };
     return userInfo;
   }

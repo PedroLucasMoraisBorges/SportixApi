@@ -5,33 +5,63 @@ import { PrismaService } from "src/database/prisma.service";
 export class CourtUtilits {
     constructor(private readonly prisma: PrismaService) { }
 
-    async getDates(startDate: string, jump: number, endDate) {
+    async verifyIsToday(date) {
+        const partesData: string[] = date.split("-");
+        const currentDay: Date = new Date(parseInt(partesData[2]), parseInt(partesData[1]) - 1, parseInt(partesData[0]));
+        const today = new Date()
+        today.setHours(0, 0, 0, 0);
+
+        console.log(currentDay)
+        console.log(today)
+
+
+        if (currentDay >= today) {
+            return true
+        }
+        else{
+            return false
+        }
+    }
+
+    async getDates(startDate: string, jump: number, endDate: Date) {
         const currentDate = new Date(endDate);
         const dates: Date[] = [];
-
+    
         let currentDateJump = new Date(startDate);
-
+    
+        // Adicione datas anteriores à start_date, se necessário
+        while (currentDateJump > currentDate) {
+            dates.push(new Date(currentDateJump)); // Adiciona a data atual
+    
+            currentDateJump = new Date(currentDateJump); // Cria uma nova instância para evitar problemas de referência
+            currentDateJump.setUTCDate(currentDateJump.getUTCDate() - jump); // Subtrai o salto de dias
+        }
+    
+        // Adicione datas posteriores à start_date até a endDate
         while (currentDateJump <= currentDate) {
             dates.push(new Date(currentDateJump)); // Adiciona a data atual
-
+    
             currentDateJump = new Date(currentDateJump); // Cria uma nova instância para evitar problemas de referência
             currentDateJump.setUTCDate(currentDateJump.getUTCDate() + jump); // Adiciona o salto de dias
         }
-
+        
+    
         return dates;
     }
+    
+    async validateRecurrenceUser(date: string, recurrenceUser) {
+        const currentDate = this.formateDateRequest(date);
+        const start_date = this.formateDateRequest(recurrenceUser.start_date);
 
-    async validateRecurrenceUser(date, recurrenceUser) {
-        const currentDate = this.formateDateRequest(date)
-        const start_date = this.formateDateRequest(recurrenceUser.start_date)
-
-        const dates = await this.getDates(start_date, recurrenceUser.range_days, currentDate);
-
+        const dates = await this.getDates(start_date, recurrenceUser.range_days, new Date());
+    
         return dates.some(date => {
             const formattedDate = this.formatDate(date);
             return formattedDate === currentDate;
         });
     }
+
+
 
     formatDate(date: Date): string {
         const year = date.getFullYear();
@@ -40,6 +70,7 @@ export class CourtUtilits {
 
         return `${year}-${month}-${day}`;
     }
+
 
     async getWekendDay(date): Promise<string> {
         const partesData: string[] = date.split("-");
@@ -51,6 +82,15 @@ export class CourtUtilits {
         const diaSemana: number = data.getDay();
 
         return dayNames[diaSemana];
+    }
+
+    async getCurrentDateFormatted() {
+        const currentDate = new Date();
+        const day = currentDate.getDate().toString().padStart(2, '0');
+        const month = (currentDate.getMonth() + 1).toString().padStart(2, '0'); // +1 porque os meses começam do zero
+        const year = currentDate.getFullYear();
+    
+        return `${day}-${month}-${year}`;
     }
 
     async getTimesOfDay(date, fk_court) {

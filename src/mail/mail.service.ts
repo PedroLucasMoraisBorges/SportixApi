@@ -18,13 +18,23 @@ export class MyMailerService {
   }
 
   async sendReservationAlert(email: string, subject: string, template: string, reservationObject : reservationObject) {
-    console.log(process.env.EMAIL_PASS)
     await this.mailerService.sendMail({
       to: email,
       subject: subject,
       template: template,
       context: {  // Dados a serem passados para o template
         reservationObject: reservationObject
+      },
+    });
+  }
+
+  async sendReserveCanceled(email: string, subject: string, template: string, reservationObject) {
+    await this.mailerService.sendMail({
+      to: email,
+      subject: subject,
+      template: template,
+      context: {  // Dados a serem passados para o template
+        reservationObject
       },
     });
   }

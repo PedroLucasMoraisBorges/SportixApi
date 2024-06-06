@@ -281,10 +281,13 @@ export class DashBoardService {
   }
 
 
-  async getReservesPerMonth(user, year: string) {
+  async getReservesPerMonth(user) {
+    const year = new Date().getFullYear()
+
     const courts = await this.getUserCourts(user)
     const reservationsPerMonth = await this.getMonths()
     const monthNames = this.getMonthNames()
+
 
     for (const court of courts) {
       for (const reservation of court.Reservation) {
@@ -294,7 +297,8 @@ export class DashBoardService {
         if (reservationYear === Number(year) && reservation.status === "Agendado") {
           const monthIndex = reservationDate.getMonth(); // Obtém o mês (0 - Janeiro, 11 - Dezembro)
           const monthName = monthNames[monthIndex];
-          reservationsPerMonth[monthName]++;
+          console.log(court.value)
+          reservationsPerMonth[monthName] += Number(court.value);
         }
       }
     }
