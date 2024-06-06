@@ -33,11 +33,9 @@ export class AuthService {
             sub: user.id,
             email: user.email,
             name: user.name,
-            court : []
+            isOwner: user.isOwner
         };
-
         const jwtToken = this.jwtService.sign(payload)
-        console.log(jwtToken)
 
         return {
             access_token: jwtToken

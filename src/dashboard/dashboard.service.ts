@@ -50,6 +50,7 @@ export class DashBoardService {
     const lastDay = `${String(today.getDate() - 1).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()};`
 
 
+
     const completeData = {
       'ammount': 0,
       'comparative': 0,
@@ -122,7 +123,9 @@ export class DashBoardService {
     for (const court of courts) {
       for (const reservation of court.Reservation) {
         const dateString = reservation.date;
+
         const [day, month, year] = dateString.split('-').map(Number);
+
         const dateReservation = new Date(year, month - 1, day);
 
         if (dateReservation.getMonth() === today.getMonth() && reservation.status === "Agendado") {
@@ -184,6 +187,7 @@ export class DashBoardService {
     for (const court of courts) {
       for (const reservation of court.Reservation) {
         const dateString = reservation.date;
+
         const [day, month, year] = dateString.split('-').map(Number);
         const dateReservation = new Date(year, month - 1, day);
 
@@ -245,6 +249,7 @@ export class DashBoardService {
     for (const court of courts) {
       for (const reservation of court.Reservation) {
         const dateString = reservation.date;
+
         const [day, month, year] = dateString.split('-').map(Number);
         const dateReservation = new Date(year, month - 1, day);
 

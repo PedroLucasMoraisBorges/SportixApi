@@ -12,6 +12,8 @@ import { CourtUtilits } from './utilits/court.utilits';
 import { ReleaseDayBody, ReleaseTimebody } from './dtos/release-time-body';
 import { MyMailerService } from 'src/mail/mail.service';
 import { EditCourt } from './entities/court.entity';
+import { DeleteCourtBody } from './dtos/delete-court.dto';
+import { reservationObject } from './entities/reservationObject.entity';
 
 @Injectable()
 export class CourtService {
@@ -27,6 +29,20 @@ export class CourtService {
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
   async create(object: CreateCourtBody, user) {
+    const data = {
+      id: randomUUID(),
+      name: object.name,
+      road: object.road,
+      neighborhood: object.neighborhood,
+      city: object.city,
+      number: object.number,
+      reference: "",
+      user: { connect: { id: user.id } }
+    }
+
+    if (object.reference != undefined) {
+      data.reference = object.reference
+    }
 
     const data = {
       id: randomUUID(),
@@ -45,16 +61,7 @@ export class CourtService {
     }
 
     const court = await this.prisma.court.create({
-      data: {
-        id: randomUUID(),
-        name: object.name,
-        road: object.road,
-        neighborhood: object.neighborhood,
-        city: object.city,
-        number: object.number,
-        reference: object.reference,
-        user: { connect: { id: user.id } }
-      }
+      data: data
     })
 
     return {
@@ -113,10 +120,10 @@ export class CourtService {
     return returnDays
   }
 
-  async editCourt(editCourtBody : EditCourtBody) {
+  async editCourt(editCourtBody: EditCourtBody) {
     const { idCourt, name, road, neighborhood, city, number, reference } = editCourtBody;
 
-    const data : EditCourt = {};
+    const data: EditCourt = {};
 
     if (name !== undefined && name !== null) data.name = name;
     if (road !== undefined && road !== null) data.road = road;
@@ -136,6 +143,24 @@ export class CourtService {
     return court;
   }
 
+  async deleteCourt(deleteCourtBody: DeleteCourtBody, user: UserLogin) {
+    const { id_court } = deleteCourtBody
+
+    try {
+      const court = await this.prisma.court.delete({
+        where: {
+          id: id_court,
+          fk_user: user.id
+        }
+      })
+
+      return court
+    }
+    catch (error) {
+      throw new Error("Quadra não encontrada")
+    }
+  }
+
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   // Requisição das quadras
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -153,6 +178,12 @@ export class CourtService {
   async getCourtInfo(fk_court, date) {
     const nomeDiaSemana = await this.courtUtilits.getWekendDay(date)
 
+    const court = await this.prisma.court.findUnique({
+      where: {
+        id: fk_court
+      }
+    })
+
     const operatingDay = await this.prisma.operatingDay.findMany({
       where: {
         fk_court: fk_court,
@@ -162,42 +193,53 @@ export class CourtService {
     })
 
     const returningTimes = []
+    if (operatingDay[0].Times.length > 0) {
+      for (const time of operatingDay[0].Times) {
+        const haveReservation = await this.courtUtilits.reservationFindMany(fk_court, date, time.hour, "Agendado")
+        const haveFreeGame = await this.courtUtilits.freeGameFindMany(fk_court, date, time.hour)
+        const haveClosure = await this.courtUtilits.closureFindMany(time.hour, fk_court, date)
 
-    for (const time of operatingDay[0].Times) {
-      const haveReservation = await this.courtUtilits.reservationFindMany(fk_court, date, time.hour, "Agendado")
-      const haveFreeGame = await this.courtUtilits.freeGameFindMany(fk_court, date, time.hour)
-      const haveClosure = await this.courtUtilits.closureFindMany(time.hour, fk_court, date)
+        const recurrenceUser = await this.prisma.recurrenceUser.findFirst({
+          where: {
+            fk_day: operatingDay[0].id,
+            fk_time: time.id
+          }
+        })
 
-      const recurrenceUser = await this.prisma.recurrenceUser.findFirst({
-        where: {
-          fk_day: operatingDay[0].id,
-          fk_time: time.id
+        const timeForUser: TimeForUSer = {
+          id: time.id,
+          hour: time.hour,
+          status: "livre"
         }
-      })
 
-      const timeForUser: TimeForUSer = {
-        id: time.id,
-        hour: time.hour,
-        status: "livre"
-      }
-
-      if (haveReservation.length == 0 && haveFreeGame.length == 0 && haveClosure.length == 0) {
-        if (recurrenceUser !== null) {
-          const haveRecurrenceUser = await this.courtUtilits.validateRecurrenceUser(date, recurrenceUser);
-          if (!haveRecurrenceUser) {
-            returningTimes.push(timeForUser)
+        if (haveReservation.length == 0 && haveFreeGame.length == 0 && haveClosure.length == 0) {
+          if (recurrenceUser !== null) {
+            const haveRecurrenceUser = await this.courtUtilits.validateRecurrenceUser(date, recurrenceUser);
+            if (!haveRecurrenceUser) {
+              returningTimes.push(timeForUser)
+            }
+            else {
+              returningTimes.push(timeForUser)
+            }
           }
           else {
             returningTimes.push(timeForUser)
           }
         }
-        else {
-          returningTimes.push(timeForUser)
-        }
+      }
+
+      return {
+        'court': court,
+        'returningTimes': returningTimes
+      }
+    }
+    else {
+      return {
+        'court': court,
+        'returningTimes': returningTimes
       }
     }
 
-    return returningTimes
   }
 
   async getUserCourtInfo(fk_court, date) {
@@ -257,12 +299,8 @@ export class CourtService {
     return returningTimes
   }
 
-  async getCourts(ownerId) {
-    const courts = await this.prisma.court.findMany({
-      where: {
-        fk_user: ownerId
-      }
-    })
+  async getCourts() {
+    const courts = await this.prisma.court.findMany({})
 
     return courts
   }
@@ -289,19 +327,108 @@ export class CourtService {
 
     const listReservations = [];
 
-    const promises = courts.map(async court => {
-      const reservations = await this.prisma.reservation.findMany({
-        where: {
-          fk_court: court.id
-        }
-      });
-      listReservations.push(...reservations);
-    });
+    for (const court of courts) {
+      for (const reservation of court.Reservation) {
+        const client = await this.prisma.user.findUnique({
+          where: {
+            id: reservation.fk_user
+          }
+        })
 
-    await Promise.all(promises);
+        const dataReturn = {
+          'object': reservation,
+          'court': court.name,
+          'client': client.name,
+          'isRecurrence': false,
+          'cancelable': false
+        }
+        if (await this.courtUtilits.verifyIsToday(reservation.date)) {
+          dataReturn.cancelable = true
+        }
+        else {
+          dataReturn.cancelable = false
+        }
+
+        listReservations.push(dataReturn);
+      }
+
+      // Validate recurrence user
+      const date = await this.courtUtilits.getCurrentDateFormatted()
+      const nomeDiaSemana = await this.courtUtilits.getWekendDay(date)
+
+      const operatingDay = await this.prisma.operatingDay.findMany({
+        where: {
+          fk_court: court.id,
+          day: nomeDiaSemana
+        },
+        include: { Times: true }
+      })
+
+      if (operatingDay.length > 0) {
+        for (const time of operatingDay[0].Times) {
+          const recurrenceUser = await this.prisma.recurrenceUser.findFirst({
+            where: {
+              fk_day: operatingDay[0].id,
+              fk_time: time.id
+            }
+          })
+
+          if (recurrenceUser !== null) {
+            const haveRecurrenceUser = await this.courtUtilits.validateRecurrenceUser(date, recurrenceUser);
+
+            if (haveRecurrenceUser) {
+              const client = await this.prisma.user.findUnique({
+                where: {
+                  id: recurrenceUser.fk_user
+                }
+              })
+
+              const recurrenceTime = await this.prisma.time.findUnique({
+                where: {
+                  id: recurrenceUser.fk_time
+                }
+              })
+
+              const dataReturn = {
+                'object': {
+                  'id': recurrenceUser.id,
+                  'date': date,
+                  'hour': recurrenceTime.hour,
+                  'status': 'Recorrente'
+                },
+                'court': court.name,
+                'client': client.name,
+                'isRecurrence': true,
+                'cancelable': false,
+              }
+
+              const recurrenceUser_C = await this.prisma.recurrenceUserCancelations.findFirst({
+                where: {
+                  fk_recurrence: recurrenceUser.id,
+                  date: date
+                }
+              })
+
+              if (recurrenceUser_C != null) {
+                dataReturn.object.status = "Cancelado"
+              }
+              if (await this.courtUtilits.verifyIsToday(date)) {
+                dataReturn.cancelable = true
+              }
+              else {
+                dataReturn.cancelable = false
+              }
+
+              listReservations.push(dataReturn);
+            }
+          }
+        }
+      }
+    }
 
     return listReservations;
   }
+
 
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   // Reserva de horários
@@ -323,26 +450,33 @@ export class CourtService {
         }
       })
 
+      const court = await this.prisma.court.findUnique({
+        where: {
+          id: fk_court
+        }
+      })
+
+      const reservationObject: reservationObject = {
+        court: court.name,
+        date: reservation.date,
+        hour: reservation.hour,
+        client: client.name
+      }
+
+      const owner = await this.prisma.user.findUnique({
+        where: {
+          id: court.fk_user
+        }
+      })
+      await this.mailService.sendReservationAlert(owner.email, "Reserva de horário", "./reserve_alert", reservationObject)
+
       returnReservation.push(reservation)
     }
 
     return returnReservation
   }
 
-  async cancelReservation(cancelReservationBody: CancelReservationBody) {
-    const { idReservation } = cancelReservationBody
 
-    const cancelReservation = await this.prisma.reservation.update({
-      where: {
-        id: idReservation
-      },
-      data: {
-        status: "Cancelado"
-      }
-    });
-
-    return cancelReservation
-  }
 
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   // Fechar Horários
@@ -421,6 +555,63 @@ export class CourtService {
     }
 
     return response
+  }
+
+  async closeReservation(cancelReservationBody: CancelReservationBody) {
+    const { id, type_reserve, date } = cancelReservationBody
+    if (type_reserve == 'reservation') {
+      const reservation = await this.prisma.reservation.update({
+        data: {
+          status: 'Cancelado pela gerência'
+        },
+        where: {
+          id: id
+        },
+        include: {
+          client: true,
+          court: true
+        }
+      })
+
+      const reservationObject = {
+        'courtName': reservation.court.name,
+        'date': reservation.date,
+        'hour': reservation.hour
+      }
+
+      await this.mailService.sendReserveCanceled(reservation.client.email, 'Reserva Cancelada', './canceledReservation', reservationObject)
+    }
+
+    else if (type_reserve == 'recurrenceUser') {
+      const recurrenceUser = await this.prisma.recurrenceUser.findUnique({
+        where: {
+          id: id
+        },
+        include: {
+          user: true,
+          court: true,
+          time: true
+        }
+      })
+
+      const recurrenceCanceled = await this.prisma.recurrenceUserCancelations.create({
+        data: {
+          id: randomUUID(),
+          date: date,
+          RecurrenceUser: { connect: { id: recurrenceUser.id } }
+        }
+      })
+
+      const reservationObject = {
+        'courtName': recurrenceUser.court.name,
+        'date': date,
+        'hour': recurrenceUser.time.hour
+      }
+
+      await this.mailService.sendReserveCanceled(recurrenceUser.user.email, 'Reserva Cancelada', './canceledReservation', reservationObject)
+
+      return recurrenceCanceled
+    }
   }
 
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

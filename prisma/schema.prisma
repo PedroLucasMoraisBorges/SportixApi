@@ -20,6 +20,7 @@ model User {
   phoneNumber    String           @unique
   email          String           @unique
   password       String
+  isOwner        Boolean          @default(false)
   Times          Time[]
   Court          Court[]
   Reservation    Reservation[]
@@ -29,6 +30,8 @@ model User {
 model Court {
   id             String           @id
   name           String
+  type           String           @default("")
+  value          Decimal          @default(0)
   road           String
   city           String
   number         String
@@ -90,15 +93,23 @@ model Closure {
 }
 
 model RecurrenceUser {
-  id         String       @id
-  range_days Int
-  start_date String       @default("")
-  fk_court   String
-  fk_day     String
-  fk_time    String
-  fk_user    String
-  time       Time         @relation(fields: [fk_time], references: [id])
-  court      Court        @relation(fields: [fk_court], references: [id])
-  user       User         @relation(fields: [fk_user], references: [id])
-  day        OperatingDay @relation(fields: [fk_day], references: [id])
+  id                         String                       @id
+  range_days                 Int
+  start_date                 String                       @default("")
+  fk_court                   String
+  fk_day                     String
+  fk_time                    String
+  fk_user                    String
+  time                       Time                         @relation(fields: [fk_time], references: [id])
+  court                      Court                        @relation(fields: [fk_court], references: [id])
+  user                       User                         @relation(fields: [fk_user], references: [id])
+  day                        OperatingDay                 @relation(fields: [fk_day], references: [id])
+  RecurrenceUserCancelations RecurrenceUserCancelations[]
+}
+
+model RecurrenceUserCancelations {
+  id             String         @id
+  date           String
+  fk_recurrence  String
+  RecurrenceUser RecurrenceUser @relation(fields: [fk_recurrence], references: [id])
 }

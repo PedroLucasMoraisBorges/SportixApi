@@ -1,32 +1,40 @@
-import { IsNotEmpty, IsString } from "class-validator"
+import { IsNotEmpty, IsOptional, IsString } from "class-validator"
 import { CloseTime } from "../entities/time.entity"
 
-export class CloseTimeBody implements CloseTime{
+export class CloseTimeBody implements CloseTime {
     @IsNotEmpty()
     @IsString()
-    hours : string[]
+    hours: string[]
 
     @IsNotEmpty()
     @IsString()
-    date : string
+    date: string
 
     @IsNotEmpty()
     @IsString()
-    fk_court : string
+    fk_court: string
 }
 
 export class CloseDayBody {
     @IsNotEmpty()
     @IsString()
-    date : string
+    date: string
 
     @IsNotEmpty()
     @IsString()
-    fk_court : string
+    fk_court: string
 }
 
 export class CancelReservationBody {
     @IsNotEmpty()
     @IsString()
-    idReservation : string
+    id: string
+
+    @IsNotEmpty()
+    @IsString()
+    type_reserve: string
+
+    @IsOptional()
+    @IsString()
+    date: string
 }

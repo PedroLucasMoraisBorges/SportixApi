@@ -58,7 +58,7 @@ export class UserService {
       name: user.name,
       cpf: user.cpf,
       phoneNumber: user.phoneNumber,
-      court: user.court
+      isOwner: user.isOwner
     };
     return userInfo;
   }
@@ -72,7 +72,7 @@ export class UserService {
     if (cpf !== undefined && cpf !== null) data.cpf = cpf;
     if (phoneNumber !== undefined && phoneNumber !== null) data.phoneNumber = phoneNumber;
 
-    const updatedUser = await this.prisma.court.update({
+    const updatedUser = await this.prisma.user.update({
       where: {
         id: user.id
       },
