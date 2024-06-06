@@ -30,10 +30,10 @@ export class DashBoardController {
     return this.dashBoardService.getCanceledsRevervesOfMonth(request.user)
   }
 
-  @Get('reservesPerMonth/:year')
+  @Get('revenuesPerMonth/')
   @HttpCode(HttpStatus.OK)
   getReservesPerMonth(@Request() request : AuthRequest) {
-    return this.dashBoardService.getReservesPerMonth(request.user, request.params.year)
+    return this.dashBoardService.getReservesPerMonth(request.user)
   }
 
   @Get('revenuePerDay/')
