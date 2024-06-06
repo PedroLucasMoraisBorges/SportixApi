@@ -28,6 +28,22 @@ export class CourtService {
 
   async create(object: CreateCourtBody, user) {
 
+    const data = {
+      id: randomUUID(),
+      name: object.name,
+      road: object.road,
+      neighborhood: object.neighborhood,
+      type: object.type,
+      city: object.city,
+      number: object.number,
+      reference: "",
+      user: { connect: { id: user.id } }
+    }
+
+    if (object.reference != undefined) {
+      data.reference = object.reference
+    }
+
     const court = await this.prisma.court.create({
       data: {
         id: randomUUID(),
