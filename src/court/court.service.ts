@@ -34,21 +34,6 @@ export class CourtService {
       name: object.name,
       road: object.road,
       neighborhood: object.neighborhood,
-      city: object.city,
-      number: object.number,
-      reference: "",
-      user: { connect: { id: user.id } }
-    }
-
-    if (object.reference != undefined) {
-      data.reference = object.reference
-    }
-
-    const data = {
-      id: randomUUID(),
-      name: object.name,
-      road: object.road,
-      neighborhood: object.neighborhood,
       type: object.type,
       city: object.city,
       number: object.number,
